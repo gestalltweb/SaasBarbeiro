@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-29T16:45:00-03:00",
+  "title": "Design System: Agenda Local",
+  "extensions": {
+    "colorMeta": {
+      "forest-ink": { "role": "primary", "displayName": "Tinta Verde", "canonical": "#214C3F", "tonalRamp": ["#0A1713", "#133026", "#214C3F", "#39705E", "#609583", "#91B9A9", "#C6DCD3", "#F0F7F4"] },
+      "warm-paper": { "role": "neutral", "displayName": "Papel Quente", "canonical": "#F4F0E8", "tonalRamp": ["#282620", "#4D4940", "#716C61", "#989187", "#BDB7AD", "#D8D3CA", "#EEEAE3", "#FCFAF5"] },
+      "appointment-red": { "role": "secondary", "displayName": "Vermelho de Marcação", "canonical": "#D8543D", "tonalRamp": ["#2A0C08", "#5B1C13", "#8A3022", "#B64331", "#D8543D", "#E98170", "#F4B8AC", "#FCEBE7"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display editorial", "purpose": "Promessas e títulos de seção." },
+      "body": { "displayName": "Interface humanista", "purpose": "Leitura, navegação, formulários e dados." }
+    },
+    "shadows": [
+      { "name": "ambient-panel", "value": "0 22px 60px rgba(24,42,45,.13)", "purpose": "Destacar demonstrações e formulários principais do papel." }
+    ],
+    "motion": [
+      { "name": "write-in", "value": ".7s cubic-bezier(.22,1,.36,1)", "purpose": "Confirmar horários em sequência na agenda de demonstração." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "640px" },
+      { "name": "compact", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação principal de aquisição ou avanço.",
+      "html": "<button class=\"ds-btn-primary\">Começar agora</button>",
+      "css": ".ds-btn-primary{min-height:50px;padding:0 24px;border:0;border-radius:10px;background:#214C3F;color:#FCFAF5;font:800 14px Manrope,Arial,sans-serif;box-shadow:0 9px 22px rgba(24,42,45,.16);transition:.25s ease}.ds-btn-primary:hover{background:#183D32;transform:translateY(-2px)}.ds-btn-primary:focus-visible{outline:3px solid #D8543D;outline-offset:3px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo administrativo com rótulo persistente.",
+      "html": "<label class=\"ds-field\"><span>Nome do negócio</span><input placeholder=\"Barbearia do João\"></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:#182A2D;font:800 12px Manrope,Arial,sans-serif}.ds-field input{min-height:50px;padding:0 14px;border:1px solid #BDB6AA;border-radius:10px;background:#fff;color:#182A2D;font:400 14px Manrope,Arial,sans-serif}.ds-field input:focus{outline:0;border-color:#214C3F;box-shadow:0 0 0 3px rgba(33,76,63,.13)}"
+    },
+    {
+      "name": "Schedule Row",
+      "kind": "custom",
+      "description": "Linha de horário com tempo, estado e serviço.",
+      "html": "<div class=\"ds-schedule\"><time>09:00</time><i></i><span><b>Marcos</b><small>Corte</small></span></div>",
+      "css": ".ds-schedule{min-height:72px;display:grid;grid-template-columns:54px 12px 1fr;align-items:center;gap:12px;border-bottom:1px solid #D8D0C2;color:#182A2D;font:400 13px Manrope,Arial,sans-serif}.ds-schedule time{font-weight:800;font-variant-numeric:tabular-nums}.ds-schedule i{width:10px;height:10px;border-radius:50%;background:#2E7D5B;box-shadow:0 0 0 5px rgba(46,125,91,.12)}.ds-schedule span{display:grid}.ds-schedule small{color:#5E6965}"
+    }
+  ],
+  "narrative": {
+    "northStar": "A agenda viva do bairro",
+    "overview": "O sistema traduz o caderno de horários de um negócio local em uma interface editorial: papel quente, tinta profunda, linhas que organizam tempo e marcações vermelhas que indicam ação.",
+    "keyCharacteristics": ["Calor humano com precisão operacional.", "Hierarquia editorial e ações diretas.", "Tempo e disponibilidade como conteúdo.", "Responsivo até 390px."],
+    "rules": [
+      { "name": "Ink-and-Paper", "body": "Todo texto e superfície parte da relação entre tinta e papel.", "section": "colors" },
+      { "name": "Two-Voice", "body": "Fraunces narra; Manrope orienta e permite agir.", "section": "typography" },
+      { "name": "One-Separation", "body": "Uma superfície usa borda ou sombra como separação principal.", "section": "elevation" }
+    ],
+    "dos": ["Usar tempo, serviços e estado real como material visual.", "Escrever ações em português direto."],
+    "donts": ["Inventar depoimentos, métricas, clientes, preços ou integrações.", "Usar vidro decorativo ou cartões repetidos como esqueleto."]
+  }
+}
