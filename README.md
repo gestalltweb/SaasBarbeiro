@@ -30,13 +30,18 @@ Fundação de um SaaS multiempresa para negócios que trabalham com horário mar
 
 3. Aplique as migrations de `supabase/migrations` no projeto Supabase.
 
+   A ordem atual é:
+
+   - `202609290001_foundation.sql`: autenticação, empresas, membros e RLS base;
+   - `202609300001_operational_mvp.sql`: serviços, profissionais, horários, clientes, agenda e funções transacionais de agendamento.
+
 4. Inicie o ambiente:
 
    ```bash
    pnpm dev
    ```
 
-Sem variáveis do Supabase, a vitrine e a demonstração em `/barbearia-modelo` continuam disponíveis; cadastro e painel informam que a conexão está pendente.
+Sem variáveis do Supabase, a vitrine continua disponível; cadastro, páginas públicas e painel dependem da conexão.
 
 ## Verificações
 
@@ -55,4 +60,8 @@ A criação de um negócio ocorre por uma função transacional no banco: empres
 
 ## Escopo atual
 
-Esta entrega conclui a fundação navegável, autenticação, tenant inicial, onboarding, dashboard base, página de demonstração e estrutura de SEO. Serviços, profissionais, disponibilidade, agendamento real, clientes, notificações e cobrança serão implementados nas próximas etapas, mantendo a sequência incremental definida no briefing.
+O MVP inclui autenticação, tenant, onboarding, serviços, profissionais, expediente, jornadas individuais, bloqueios, disponibilidade real, agendamento público protegido contra conflitos, agenda, clientes, configurações e publicação da página. Notificações e cobrança permanecem fora deste MVP.
+
+## Agendamento seguro
+
+O navegador nunca grava diretamente em `appointments`. A função `create_public_appointment` valida se a página, serviço e profissional estão ativos, recalcula a disponibilidade no banco, trava a combinação profissional/horário durante a transação e conta com uma restrição de exclusão para impedir sobreposição. Clientes públicos não recebem acesso de leitura às tabelas privadas.

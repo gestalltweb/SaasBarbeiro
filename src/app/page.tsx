@@ -55,7 +55,7 @@ export default function Home() {
           </p>
           <div className="hero-actions">
             <Link className="button" href="/cadastro">Começar agora <ArrowRight size={18} /></Link>
-            <Link className="button button-secondary" href="/barbearia-modelo">Ver página de exemplo</Link>
+            <Link className="button button-secondary" href="#como-funciona">Conhecer o processo</Link>
           </div>
           <div className="trust-line">
             <span><Check size={16} /> Configuração guiada</span>
@@ -111,7 +111,7 @@ export default function Home() {
             <h2>Uma página que trabalha antes de você responder.</h2>
             <p>Sua identidade, seus serviços e sua disponibilidade real em uma experiência pensada para transformar visitas em horários marcados.</p>
             <ul><li><Check /> Link exclusivo para o seu negócio</li><li><Check /> Serviços, preços e duração</li><li><Check /> Profissionais e horários disponíveis</li><li><Check /> Localização e contato em um só lugar</li></ul>
-            <Link className="inline-arrow" href="/barbearia-modelo">Abrir página de demonstração <ArrowRight size={18} /></Link>
+            <Link className="inline-arrow" href="/cadastro">Criar minha página <ArrowRight size={18} /></Link>
           </div>
         </div>
       </section>
@@ -134,7 +134,7 @@ export default function Home() {
       <footer className="site-footer page-shell">
         <div><Link className="brand" href="/"><span className="brand-mark">A</span><span>{brand.name}</span></Link><p>{brand.description}</p></div>
         <div><strong>Produto</strong><a href="#como-funciona">Como funciona</a><a href="#recursos">Recursos</a><a href="#plano">Plano</a></div>
-        <div><strong>Acesso</strong><Link href="/entrar">Entrar</Link><Link href="/cadastro">Criar conta</Link><Link href="/barbearia-modelo">Ver demonstração</Link></div>
+        <div><strong>Acesso</strong><Link href="/entrar">Entrar</Link><Link href="/cadastro">Criar conta</Link></div>
         <p className="footer-note">© 2026 {brand.name}. Projeto em desenvolvimento.</p>
       </footer>
     </main>
