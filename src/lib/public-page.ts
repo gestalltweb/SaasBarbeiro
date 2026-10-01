@@ -133,9 +133,12 @@ export function resolveTemplate(value: unknown): PageTemplate | null {
   return legacyTemplateMap[value as LegacyPageTemplate] || null;
 }
 export function recommendedTemplates(segment: BusinessSegment): PageTemplate[] {
-  if (segment === "barbershop") return ["noir-atelier", "urban-signal"];
+  if (segment === "barbershop" || segment === "tattoo_piercing" || segment === "auto_detailing") return ["noir-atelier", "urban-signal"];
   if (segment === "hair_salon") return ["maison-editorial"];
-  if (segment === "aesthetics") return ["botanical-ritual", "clinical-luxe"];
+  if (segment === "aesthetics" || segment === "fitness_sports") return ["botanical-ritual", "clinical-luxe"];
+  if (segment === "health_wellness") return ["clinical-luxe", "botanical-ritual"];
+  if (segment === "pet_care") return ["botanical-ritual", "maison-editorial"];
+  if (segment === "consulting_education") return ["maison-editorial", "urban-signal"];
   return [];
 }
 export function firstPalette(template: PageTemplate) { return Object.keys(templatePalettes[template])[0]; }

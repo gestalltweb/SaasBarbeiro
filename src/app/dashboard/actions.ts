@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireBusiness } from "@/lib/dashboard";
-import { hasServiceSuggestions } from "@/lib/service-suggestions";
+import { hasServiceSuggestions, serviceSuggestions, type SuggestedService } from "@/lib/service-suggestions";
 import {
   businessSettingsSchema,
   professionalSchema,
@@ -77,10 +77,43 @@ export async function addSuggestedServices() {
     fail(path, "Não existem sugestões prontas para este segmento. Cadastre seus serviços personalizados.");
   }
 
+  let added = 0;
   const { data, error } = await supabase.rpc("add_suggested_services");
-  if (error) fail(path, "Não foi possível adicionar os serviços sugeridos. Verifique se a migration mais recente foi aplicada.");
+  if (!error && typeof data === "number") {
+    added = data;
+  }
 
-  const added = typeof data === "number" ? data : Number(data ?? 0);
+  if (added === 0 && business.segment in serviceSuggestions) {
+    const suggestions = (serviceSuggestions as Record<string, readonly SuggestedService[]>)[business.segment] || [];
+    if (suggestions.length > 0) {
+      const { data: existing } = await supabase
+        .from("services")
+        .select("name, suggestion_key")
+        .eq("business_id", business.id);
+
+      const existingKeys = new Set(existing?.map((s) => s.suggestion_key).filter(Boolean));
+      const existingNames = new Set(existing?.map((s) => s.name.toLowerCase().trim()));
+
+      const toInsert = suggestions
+        .filter((s) => !existingKeys.has(s.key) && !existingNames.has(s.name.toLowerCase().trim()))
+        .map((s) => ({
+          business_id: business.id,
+          suggestion_key: s.key,
+          name: s.name,
+          description: s.description,
+          duration_minutes: s.durationMinutes,
+          price_cents: s.priceCents,
+        }));
+
+      if (toInsert.length > 0) {
+        const { error: insertError } = await supabase.from("services").insert(toInsert);
+        if (!insertError) {
+          added = toInsert.length;
+        }
+      }
+    }
+  }
+
   if (added === 0) ok(path, "Todos os serviços sugeridos já estão cadastrados.");
   ok(path, `${added} ${added === 1 ? "serviço sugerido adicionado" : "serviços sugeridos adicionados"}.`);
 }

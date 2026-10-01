@@ -8,6 +8,12 @@ describe("public page configuration v2", () => {
     expect(recommendedTemplates("barbershop")).toEqual(["noir-atelier", "urban-signal"]);
     expect(recommendedTemplates("hair_salon")).toEqual(["maison-editorial"]);
     expect(recommendedTemplates("aesthetics")).toEqual(["botanical-ritual", "clinical-luxe"]);
+    expect(recommendedTemplates("health_wellness")).toEqual(["clinical-luxe", "botanical-ritual"]);
+    expect(recommendedTemplates("pet_care")).toEqual(["botanical-ritual", "maison-editorial"]);
+    expect(recommendedTemplates("fitness_sports")).toEqual(["botanical-ritual", "clinical-luxe"]);
+    expect(recommendedTemplates("tattoo_piercing")).toEqual(["noir-atelier", "urban-signal"]);
+    expect(recommendedTemplates("consulting_education")).toEqual(["maison-editorial", "urban-signal"]);
+    expect(recommendedTemplates("auto_detailing")).toEqual(["noir-atelier", "urban-signal"]);
     expect(recommendedTemplates("other")).toEqual([]);
   });
 
