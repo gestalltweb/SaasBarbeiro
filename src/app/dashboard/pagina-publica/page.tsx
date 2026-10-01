@@ -37,7 +37,9 @@ export default async function PublicPageStudio({ searchParams }: { searchParams:
       business={data.business}
       services={data.services}
       professionals={data.professionals}
+      businessHours={data.businessHours}
       initialConfig={data.draft}
+      publishedConfig={data.published}
       publishedPaths={data.publishedPaths}
       isPublished={data.business.is_published}
       ready={data.ready}

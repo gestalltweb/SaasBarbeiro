@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, Clock3 } from "lucide-react";
 import { notFound } from "next/navigation";
-import { PublicPageView, type PublicPageBusiness, type PublicPageProfessional, type PublicPageService } from "@/components/public-page-view";
+import { PublicPageView, type PublicPageBusiness, type PublicPageBusinessHour, type PublicPageProfessional, type PublicPageService } from "@/components/public-page-view";
 import { money } from "@/lib/dashboard";
 import { buildPublicPageSeo, normalizePageConfig } from "@/lib/public-page";
 import type { BusinessSegment } from "@/lib/service-suggestions";
@@ -18,14 +18,15 @@ async function getPublicData(slug: string) {
   const supabase = await createClient();
   const { data: business } = await supabase.from("businesses").select("id, name, slug, segment, description, address, phone, instagram, timezone, is_published").eq("slug", slug).eq("is_published", true).maybeSingle();
   if (!business) return null;
-  const [{ data: services }, { data: professionals }, configResult] = await Promise.all([
-    supabase.from("services").select("id, name, description, price_cents, duration_minutes").eq("business_id", business.id).eq("is_active", true).order("name"),
-    supabase.from("professionals").select("id, name, description, contact, professional_services(service_id)").eq("business_id", business.id).eq("is_active", true).order("name"),
+  const [{ data: services }, { data: professionals }, { data: businessHours }, configResult] = await Promise.all([
+    supabase.from("services").select("id, name, description, price_cents, duration_minutes, is_active").eq("business_id", business.id).eq("is_active", true).order("name"),
+    supabase.from("professionals").select("id, name, description, contact, is_active, professional_services(service_id)").eq("business_id", business.id).eq("is_active", true).order("name"),
+    supabase.from("business_hours").select("day_of_week, start_time, end_time").eq("business_id", business.id).order("day_of_week").order("start_time"),
     supabase.rpc("get_public_page_config", { p_slug: slug }),
   ]);
   const typedBusiness = business as PublicBusiness;
   const config = normalizePageConfig(configResult.data, typedBusiness);
-  return { supabase, business: typedBusiness, config, services: (services || []) as PublicPageService[], professionals: (professionals || []) as PublicPageProfessional[] };
+  return { supabase, business: typedBusiness, config, services: (services || []) as PublicPageService[], professionals: (professionals || []) as PublicPageProfessional[], businessHours: (businessHours || []) as PublicPageBusinessHour[] };
 }
 
 type BusinessPageProps = { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -54,7 +55,7 @@ export default async function PublicBusinessPage({ params, searchParams }: Busin
   const query = await searchParams;
   const data = await getPublicData(slug);
   if (!data) notFound();
-  const { supabase, business, config, services, professionals } = data;
+  const { supabase, business, config, services, professionals, businessHours } = data;
   const selectedServiceId = typeof query.servico === "string" ? query.servico : "";
   const selectedProfessionalId = typeof query.profissional === "string" ? query.profissional : "";
   const selectedDate = typeof query.data === "string" ? query.data : "";
@@ -85,5 +86,5 @@ export default async function PublicBusinessPage({ params, searchParams }: Busin
     </>}
   </div>;
 
-  return <PublicPageView business={business} services={services} professionals={professionals} config={config} booking={booking} />;
+  return <PublicPageView business={business} services={services} professionals={professionals} businessHours={businessHours} config={config} booking={booking} />;
 }

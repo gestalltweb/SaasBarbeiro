@@ -8,9 +8,9 @@ export async function loadPublicPageDashboardData() {
   const { supabase, business } = await requireBusiness();
   const [pageResult, servicesResult, professionalsResult, businessHours, professionalHours] = await Promise.all([
     supabase.from("business_public_pages").select("mode, draft_config, published_config, published_at").eq("business_id", business.id).maybeSingle(),
-    supabase.from("services").select("id, name, description, price_cents, duration_minutes").eq("business_id", business.id).eq("is_active", true).order("name"),
-    supabase.from("professionals").select("id, name, description, contact, professional_services(service_id)").eq("business_id", business.id).eq("is_active", true).order("name"),
-    supabase.from("business_hours").select("id", { count: "exact", head: true }).eq("business_id", business.id),
+    supabase.from("services").select("id, name, description, price_cents, duration_minutes, is_active").eq("business_id", business.id).eq("is_active", true).order("name"),
+    supabase.from("professionals").select("id, name, description, contact, is_active, professional_services(service_id)").eq("business_id", business.id).eq("is_active", true).order("name"),
+    supabase.from("business_hours").select("id, day_of_week, start_time, end_time", { count: "exact" }).eq("business_id", business.id).order("day_of_week").order("start_time"),
     supabase.from("professional_hours").select("id", { count: "exact", head: true }).eq("business_id", business.id),
   ]);
   if (pageResult.error) throw new Error("Aplique a migration do estúdio de página pública no Supabase antes de usar este recurso.");
@@ -20,7 +20,7 @@ export async function loadPublicPageDashboardData() {
   const page = pageResult.data;
   const draft = normalizePageConfig(page?.draft_config, defaults);
   const published = page?.published_config ? normalizePageConfig(page.published_config, defaults) : null;
-  const paths = (config: PublicPageConfig | null) => config ? [config.media.logoPath, config.media.coverPath, config.media.sharePath, ...config.media.gallery.map((item) => item.path), ...Object.values(config.media.professionalPhotos).map((item) => item.path)].filter(Boolean) : [];
+  const paths = (config: PublicPageConfig | null) => config ? [config.media.logoPath, config.media.coverPath, config.media.coverPosterPath, config.media.sharePath, ...config.media.gallery.map((item) => item.path), ...Object.values(config.media.professionalPhotos).map((item) => item.path)].filter(Boolean) : [];
 
   return {
     supabase,
@@ -31,6 +31,7 @@ export async function loadPublicPageDashboardData() {
     publishedPaths: paths(published),
     services: servicesResult.data || [],
     professionals: professionalsResult.data || [],
+    businessHours: businessHours.data || [],
     ready: Boolean(servicesResult.data?.length && professionalsResult.data?.length && businessHours.count && professionalHours.count),
   };
 }

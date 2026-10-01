@@ -77,7 +77,7 @@ const shortText = (maximum: number) => z.string().trim().max(maximum);
 const mediaItemSchema = z.object({ url: z.union([z.literal(""), z.url()]), path: shortText(500), alt: shortText(120) });
 
 export const publicPageConfigSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
   mode: z.enum(pageModes),
   template: z.enum(pageTemplates),
   palette: shortText(40),
@@ -93,6 +93,7 @@ export const publicPageConfigSchema = z.object({
   content: z.object({
     businessName: shortText(100),
     heroTitle: shortText(120), heroSubtitle: shortText(240), introduction: shortText(800),
+    story: shortText(2400),
     primaryButton: shortText(40), bookingNotice: shortText(300), footerText: shortText(240),
     seoTitle: shortText(70), seoDescription: shortText(170),
   }),
@@ -100,9 +101,15 @@ export const publicPageConfigSchema = z.object({
   sections: z.array(z.object({ id: z.enum(pageSections), visible: z.boolean() })).length(pageSections.length),
   serviceOrder: z.array(z.uuid()).max(200),
   professionalOrder: z.array(z.uuid()).max(200),
+  differentials: z.array(z.object({ id: z.uuid(), title: shortText(80), description: shortText(300) })).max(8),
+  testimonials: z.array(z.object({ id: z.uuid(), name: shortText(80), text: shortText(600), context: shortText(120) })).max(12),
+  faq: z.array(z.object({ id: z.uuid(), question: shortText(180), answer: shortText(1000) })).max(12),
+  professionalCredentials: z.record(z.string(), shortText(240)),
   media: z.object({
     logoUrl: z.union([z.literal(""), z.url()]), logoPath: shortText(500),
     coverUrl: z.union([z.literal(""), z.url()]), coverPath: shortText(500),
+    coverType: z.enum(["image", "video"]),
+    coverPosterUrl: z.union([z.literal(""), z.url()]), coverPosterPath: shortText(500),
     shareUrl: z.union([z.literal(""), z.url()]), sharePath: shortText(500),
     gallery: z.array(mediaItemSchema).max(12),
     professionalPhotos: z.record(z.string(), z.object({ url: z.url(), path: shortText(500) })),

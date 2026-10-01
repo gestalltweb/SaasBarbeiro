@@ -26,7 +26,7 @@ function parseConfig(value: FormDataEntryValue | null, businessId: string) {
   const parsed = publicPageConfigSchema.safeParse(raw);
   if (!parsed.success) fail(parsed.error.issues[0]?.message || "Revise a configuração da página.");
 
-  const paths = [parsed.data.media.logoPath, parsed.data.media.coverPath, parsed.data.media.sharePath,
+  const paths = [parsed.data.media.logoPath, parsed.data.media.coverPath, parsed.data.media.coverPosterPath, parsed.data.media.sharePath,
     ...parsed.data.media.gallery.map((item) => item.path),
     ...Object.values(parsed.data.media.professionalPhotos).map((item) => item.path),
   ].filter(Boolean);
@@ -43,7 +43,7 @@ async function persistDraft(config: ReturnType<typeof publicPageConfigSchema.par
 function mediaPaths(config: unknown) {
   const parsed = publicPageConfigSchema.safeParse(config);
   if (!parsed.success) return [];
-  return [parsed.data.media.logoPath, parsed.data.media.coverPath, parsed.data.media.sharePath,
+  return [parsed.data.media.logoPath, parsed.data.media.coverPath, parsed.data.media.coverPosterPath, parsed.data.media.sharePath,
     ...parsed.data.media.gallery.map((item) => item.path),
     ...Object.values(parsed.data.media.professionalPhotos).map((item) => item.path),
   ].filter(Boolean);
@@ -63,6 +63,22 @@ export async function savePublicPageDraft(formData: FormData) {
   const config = parseConfig(formData.get("config"), business.id);
   await persistDraft(config);
   ok("Rascunho salvo. A página publicada não foi alterada.");
+}
+
+export async function autoSavePublicPageDraft(configJson: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { supabase, business } = await requireBusiness();
+    const parsed = publicPageConfigSchema.safeParse(JSON.parse(configJson));
+    if (!parsed.success) return { ok: false, error: "Configuração inválida." };
+    const paths = mediaPaths(parsed.data);
+    if (paths.some((mediaPath) => !mediaPath.startsWith(`${business.id}/`))) return { ok: false, error: "Arquivo de outro negócio." };
+    const { error } = await supabase.rpc("save_public_page_draft", { p_mode: parsed.data.mode, p_config: parsed.data });
+    if (error) return { ok: false, error: "Não foi possível salvar." };
+    revalidatePath(path);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Não foi possível salvar." };
+  }
 }
 
 export async function saveAndPreviewPublicPage(formData: FormData) {

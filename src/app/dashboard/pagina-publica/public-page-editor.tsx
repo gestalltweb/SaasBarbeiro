@@ -1,15 +1,15 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Check, ImagePlus, Laptop, LoaderCircle, RotateCcw, Save, Smartphone, Sparkles, Trash2 } from "lucide-react";
-import { PublicPageView, type PublicPageBusiness, type PublicPageProfessional, type PublicPageService } from "@/components/public-page-view";
-import { applyTemplate, firstPalette, orderForPublic, recommendedTemplates, templateDetails, templatePalettes, type PageMode, type PageSection, type PageTemplate, type PublicPageConfig } from "@/lib/public-page";
+import { ArrowDown, ArrowUp, Check, ImagePlus, Laptop, LoaderCircle, Plus, RotateCcw, Save, Smartphone, Sparkles, Tablet, Trash2 } from "lucide-react";
+import { PublicPageView, type PublicPageBusiness, type PublicPageBusinessHour, type PublicPageProfessional, type PublicPageService } from "@/components/public-page-view";
+import { applyTemplate, firstPalette, orderForPublic, recommendedTemplates, templateDetails, templatePalettes, templatePreviewAssets, type PageMode, type PageSection, type PageTemplate, type PublicPageConfig } from "@/lib/public-page";
 import type { BusinessSegment } from "@/lib/service-suggestions";
-import { deletePublicPageImage, uploadPublicPageImage } from "@/lib/media-upload";
-import { publishPageChanges, restorePageDefault, saveAndPreviewPublicPage, savePublicPageDraft, unpublishPublicPage } from "./actions";
+import { deletePublicPageImage, uploadPublicPageImage, uploadPublicPageMedia } from "@/lib/media-upload";
+import { autoSavePublicPageDraft, publishPageChanges, restorePageDefault, saveAndPreviewPublicPage, savePublicPageDraft, unpublishPublicPage } from "./actions";
 
 type Props = {
   businessId: string;
@@ -17,7 +17,9 @@ type Props = {
   business: PublicPageBusiness;
   services: PublicPageService[];
   professionals: PublicPageProfessional[];
+  businessHours: PublicPageBusinessHour[];
   initialConfig: PublicPageConfig;
+  publishedConfig: PublicPageConfig | null;
   publishedPaths: string[];
   isPublished: boolean;
   ready: boolean;
@@ -25,8 +27,9 @@ type Props = {
 };
 
 const sectionLabels: Record<PageSection, string> = {
-  presentation: "Apresentação", services: "Serviços", professionals: "Profissionais", gallery: "Galeria",
-  location: "Localização", contact: "Contato", booking: "Agendamento", footer: "Rodapé",
+  hero: "Hero", positioning: "Posicionamento", services: "Serviços", story: "História", differentials: "Diferenciais",
+  process: "Processo", professionals: "Profissionais", testimonials: "Depoimentos", faq: "Perguntas frequentes", gallery: "Galeria",
+  booking: "Agendamento", businessHours: "Horários", location: "Localização", instagram: "Instagram", footer: "Rodapé",
 };
 
 function SubmitButton({ children, className = "button", disabled = false }: { children: React.ReactNode; className?: string; disabled?: boolean }) {
@@ -34,16 +37,16 @@ function SubmitButton({ children, className = "button", disabled = false }: { ch
   return <button className={className} type="submit" disabled={pending || disabled}>{pending ? <><LoaderCircle className="spin" /> Salvando...</> : children}</button>;
 }
 
-function MediaField({ label, hint, folder, businessId, value, publishedPaths, onChange }: {
-  label: string; hint: string; folder: string; businessId: string; value: { url: string; path: string };
-  publishedPaths: string[]; onChange: (value: { url: string; path: string }) => void;
+function MediaField({ label, hint, folder, businessId, value, publishedPaths, onChange, allowVideo = false }: {
+  label: string; hint: string; folder: string; businessId: string; value: { url: string; path: string; type?: "image" | "video" };
+  publishedPaths: string[]; allowVideo?: boolean; onChange: (value: { url: string; path: string; type: "image" | "video" }) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function upload(file?: File) {
     if (!file) return;
     setBusy(true); setError("");
-    try { onChange(await uploadPublicPageImage(file, businessId, folder)); }
+    try { onChange(await uploadPublicPageMedia(file, businessId, folder, allowVideo)); }
     catch (uploadError) { setError(uploadError instanceof Error ? uploadError.message : "Não foi possível enviar a imagem."); }
     finally { setBusy(false); }
   }
@@ -51,11 +54,11 @@ function MediaField({ label, hint, folder, businessId, value, publishedPaths, on
     setBusy(true); setError("");
     try {
       if (value.path && !publishedPaths.includes(value.path)) await deletePublicPageImage(value.path);
-      onChange({ url: "", path: "" });
+      onChange({ url: "", path: "", type: "image" });
     } catch (removeError) { setError(removeError instanceof Error ? removeError.message : "Não foi possível excluir a imagem."); }
     finally { setBusy(false); }
   }
-  return <div className="media-field"><div><strong>{label}</strong><small>{hint} JPG, PNG ou WebP, até 5 MB.</small></div>{value.url ? <div className="media-preview"><img src={value.url} alt="Pré-visualização" /><button type="button" onClick={remove} disabled={busy}><Trash2 /> Remover</button></div> : <label className="media-upload"><ImagePlus /> <span>{busy ? "Enviando..." : "Selecionar imagem"}</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => upload(event.target.files?.[0])} disabled={busy} /></label>}{error && <p className="field-error" role="alert">{error}</p>}</div>;
+  return <div className="media-field"><div><strong>{label}</strong><small>{hint} {allowVideo ? "JPG, PNG, WebP, MP4 ou WebM." : "JPG, PNG ou WebP, até 5 MB."}</small></div>{value.url ? <div className="media-preview">{value.type === "video" ? <video src={value.url} muted controls preload="metadata" /> : <img src={value.url} alt="Pré-visualização" />}<button type="button" onClick={remove} disabled={busy}><Trash2 /> Remover</button></div> : <label className="media-upload"><ImagePlus /> <span>{busy ? "Enviando..." : allowVideo ? "Selecionar imagem ou vídeo" : "Selecionar imagem"}</span><input type="file" accept={allowVideo ? "image/jpeg,image/png,image/webp,video/mp4,video/webm" : "image/jpeg,image/png,image/webp"} onChange={(event) => upload(event.target.files?.[0])} disabled={busy} /></label>}{error && <p className="field-error" role="alert">{error}</p>}</div>;
 }
 
 function GalleryField({ businessId, images, publishedPaths, onChange }: {
@@ -91,11 +94,25 @@ function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
 
 export function PublicPageEditor(props: Props) {
   const [config, setConfig] = useState(props.initialConfig);
-  const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
+  const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "error">("saved");
+  const [isAutoSaving, startAutoSave] = useTransition();
+  const initialRender = useRef(true);
   const recommended = recommendedTemplates(props.segment);
   const configJson = useMemo(() => JSON.stringify(config), [config]);
+  const hasUnpublishedChanges = !props.publishedConfig || JSON.stringify(config) !== JSON.stringify(props.publishedConfig);
   const displayedServices = orderForPublic(props.services, config.serviceOrder);
   const displayedProfessionals = orderForPublic(props.professionals, config.professionalOrder);
+
+  useEffect(() => {
+    if (initialRender.current) { initialRender.current = false; return; }
+    setAutoSaveStatus("saving");
+    const timer = window.setTimeout(() => startAutoSave(async () => {
+      const result = await autoSavePublicPageDraft(configJson);
+      setAutoSaveStatus(result.ok ? "saved" : "error");
+    }), 1400);
+    return () => window.clearTimeout(timer);
+  }, [configJson]);
 
   function changeMode(mode: PageMode) {
     if (mode === config.mode) return;
@@ -120,19 +137,30 @@ export function PublicPageEditor(props: Props) {
   return <div className="page-studio-layout">
     <aside className="page-editor-panel">
       <div className="studio-mode-switch" aria-label="Modo de configuração"><button type="button" className={config.mode === "manual" ? "active" : ""} onClick={() => changeMode("manual")}>Montar manualmente</button><button type="button" className={config.mode === "template" ? "active" : ""} onClick={() => changeMode("template")}>Página pronta</button></div>
+      <div className="draft-sync-state" role="status"><span className={hasUnpublishedChanges ? "has-changes" : "published-equal"}>{hasUnpublishedChanges ? "Alterações ainda não publicadas" : "Rascunho igual à página publicada"}</span><small>{isAutoSaving || autoSaveStatus === "saving" ? "Salvando rascunho…" : autoSaveStatus === "error" ? "Falha ao salvar automaticamente" : "Rascunho salvo automaticamente"}</small></div>
 
       {config.mode === "template" && <>
         <ol className="studio-progress"><li className="complete"><Check /> Modelo</li><li className="complete"><Check /> Paleta</li><li className="active">Marca</li><li>Visualizar</li><li>Publicar</li></ol>
         {recommended.length > 0 && <section className="recommended-template"><div><Sparkles /><span><strong>Modelo recomendado para o seu segmento</strong><small>{recommended.map((item) => templateDetails[item].name).join(" ou ")}</small></span></div><button type="button" onClick={() => selectTemplate(recommended[0])}>Usar modelo recomendado</button></section>}
-        <section className="editor-group"><header><h2>Escolha o modelo</h2><p>Estruturas diferentes para posicionar seu negócio.</p></header><div className="template-picker">{(Object.keys(templateDetails) as PageTemplate[]).map((template) => <button type="button" className={config.template === template ? "selected" : ""} onClick={() => selectTemplate(template)} key={template}><span className={`template-miniature miniature-${template}`}><i /><b /><em /></span><strong>{templateDetails[template].name}</strong><small>{templateDetails[template].description}</small>{recommended.includes(template) && <mark>Recomendado</mark>}</button>)}</div></section>
+        <section className="editor-group"><header><h2>Escolha o modelo</h2><p>Cada miniatura representa uma landing page com estrutura própria.</p></header><div className="template-picker">{(Object.keys(templateDetails) as PageTemplate[]).map((template) => <button type="button" className={config.template === template ? "selected" : ""} onClick={() => selectTemplate(template)} key={template}><span className="template-miniature real-preview" style={{ backgroundImage: `url(${templatePreviewAssets[template].moodboard})` }} /><strong>{templateDetails[template].name}</strong><small>{templateDetails[template].description}</small>{recommended.includes(template) && <mark>Recomendado</mark>}</button>)}</div></section>
         <section className="editor-group"><header><h2>Paleta</h2><p>Escolha visualmente uma combinação testada.</p></header><div className="palette-picker">{Object.entries(templatePalettes[config.template]).map(([key, palette]) => <button type="button" className={config.palette === key ? "selected" : ""} onClick={() => selectPalette(key)} key={key}><span><i style={{ background: palette.primary }} /><i style={{ background: palette.secondary }} /><i style={{ background: palette.button }} /></span><strong>{palette.name}</strong></button>)}</div></section>
       </>}
 
-      <section className="editor-group"><header><h2>Marca e imagens</h2><p>Imagens são comprimidas antes do envio quando necessário.</p></header><MediaField label="Logo" hint="Recomendado: quadrado, 600 × 600 px." folder="logo" businessId={props.businessId} value={{ url: config.media.logoUrl, path: config.media.logoPath }} publishedPaths={props.publishedPaths} onChange={(image) => setConfig((current) => ({ ...current, media: { ...current.media, logoUrl: image.url, logoPath: image.path } }))} /><MediaField label="Imagem de capa" hint="Recomendado: horizontal, 1800 × 1000 px." folder="cover" businessId={props.businessId} value={{ url: config.media.coverUrl, path: config.media.coverPath }} publishedPaths={props.publishedPaths} onChange={(image) => setConfig((current) => ({ ...current, media: { ...current.media, coverUrl: image.url, coverPath: image.path } }))} /><MediaField label="Imagem de compartilhamento" hint="Recomendado: 1200 × 630 px." folder="sharing" businessId={props.businessId} value={{ url: config.media.shareUrl, path: config.media.sharePath }} publishedPaths={props.publishedPaths} onChange={(image) => setConfig((current) => ({ ...current, media: { ...current.media, shareUrl: image.url, sharePath: image.path } }))} /><GalleryField businessId={props.businessId} images={config.media.gallery} publishedPaths={props.publishedPaths} onChange={(gallery) => setConfig((current) => ({ ...current, media: { ...current.media, gallery } }))} /></section>
+      {config.mode === "template" && <section className="editor-group"><header><h2>Direção de arte original</h2><p>Materiais decorativos gerados para o modelo. Eles não representam profissionais ou clientes reais e podem ser substituídos pelas suas imagens.</p></header><div className="template-art-library">{(["barbershop", "hairSalon", "aesthetics"] as const).map((kind) => <button type="button" key={kind} onClick={() => setConfig((current) => ({ ...current, media: { ...current.media, coverUrl: templatePreviewAssets[current.template][kind], coverPath: "", coverType: "image" } }))}><img src={templatePreviewAssets[config.template][kind]} alt="Material decorativo original" /><span>{kind === "barbershop" ? "Barbearia" : kind === "hairSalon" ? "Salão" : "Estética"}</span></button>)}</div></section>}
+
+      <section className="editor-group"><header><h2>Marca e imagens</h2><p>Imagens são comprimidas antes do envio quando necessário.</p></header><MediaField label="Logo" hint="Recomendado: quadrado, 600 × 600 px." folder="logo" businessId={props.businessId} value={{ url: config.media.logoUrl, path: config.media.logoPath }} publishedPaths={props.publishedPaths} onChange={(image) => setConfig((current) => ({ ...current, media: { ...current.media, logoUrl: image.url, logoPath: image.path } }))} /><MediaField label="Imagem ou vídeo de capa" hint="Horizontal. Vídeos: até 20 MB e carregamento tardio." folder="cover" businessId={props.businessId} value={{ url: config.media.coverUrl, path: config.media.coverPath, type: config.media.coverType }} publishedPaths={props.publishedPaths} allowVideo onChange={(media) => setConfig((current) => ({ ...current, media: { ...current.media, coverUrl: media.url, coverPath: media.path, coverType: media.type } }))} /><MediaField label="Poster do vídeo" hint="Imagem usada antes do vídeo e em conexões lentas." folder="cover-poster" businessId={props.businessId} value={{ url: config.media.coverPosterUrl, path: config.media.coverPosterPath }} publishedPaths={props.publishedPaths} onChange={(image) => setConfig((current) => ({ ...current, media: { ...current.media, coverPosterUrl: image.url, coverPosterPath: image.path } }))} /><MediaField label="Imagem de compartilhamento" hint="Recomendado: 1200 × 630 px." folder="sharing" businessId={props.businessId} value={{ url: config.media.shareUrl, path: config.media.sharePath }} publishedPaths={props.publishedPaths} onChange={(image) => setConfig((current) => ({ ...current, media: { ...current.media, shareUrl: image.url, sharePath: image.path } }))} /><GalleryField businessId={props.businessId} images={config.media.gallery} publishedPaths={props.publishedPaths} onChange={(gallery) => setConfig((current) => ({ ...current, media: { ...current.media, gallery } }))} /></section>
 
       {props.professionals.length > 0 && <section className="editor-group"><header><h2>Fotos dos profissionais</h2><p>Opcional. Sem foto, o modelo usa um monograma.</p></header>{props.professionals.map((professional) => { const photo = config.media.professionalPhotos[professional.id] || { url: "", path: "" }; return <MediaField key={professional.id} label={professional.name} hint="Recomendado: retrato, 900 × 1200 px." folder={`professionals/${professional.id}`} businessId={props.businessId} value={photo} publishedPaths={props.publishedPaths} onChange={(image) => setConfig((current) => ({ ...current, media: { ...current.media, professionalPhotos: { ...current.media.professionalPhotos, [professional.id]: image } } }))} />; })}</section>}
 
-      <section className="editor-group"><header><h2>Conteúdo</h2><p>Textos compatíveis com todos os modelos.</p></header><div className="field"><label htmlFor="page-business-name">Nome do negócio na página</label><input id="page-business-name" value={config.content.businessName} maxLength={100} onChange={(event) => updateContent("businessName", event.target.value)} /></div><div className="field"><label htmlFor="hero-title">Título principal</label><input id="hero-title" value={config.content.heroTitle} maxLength={120} onChange={(event) => updateContent("heroTitle", event.target.value)} /></div><div className="field"><label htmlFor="hero-subtitle">Subtítulo</label><textarea id="hero-subtitle" value={config.content.heroSubtitle} maxLength={240} onChange={(event) => updateContent("heroSubtitle", event.target.value)} /></div><div className="field"><label htmlFor="intro">Apresentação</label><textarea id="intro" value={config.content.introduction} maxLength={800} onChange={(event) => updateContent("introduction", event.target.value)} /></div><div className="field"><label htmlFor="button-text">Texto do botão principal</label><input id="button-text" value={config.content.primaryButton} maxLength={40} onChange={(event) => updateContent("primaryButton", event.target.value)} /></div><div className="field"><label htmlFor="booking-notice">Aviso antes do agendamento</label><textarea id="booking-notice" value={config.content.bookingNotice} maxLength={300} onChange={(event) => updateContent("bookingNotice", event.target.value)} /></div><div className="field"><label htmlFor="footer-text">Texto do rodapé</label><input id="footer-text" value={config.content.footerText} maxLength={240} onChange={(event) => updateContent("footerText", event.target.value)} /></div></section>
+      <section className="editor-group"><header><h2>Conteúdo</h2><p>Textos compatíveis com todos os modelos.</p></header><div className="field"><label htmlFor="page-business-name">Nome do negócio na página</label><input id="page-business-name" value={config.content.businessName} maxLength={100} onChange={(event) => updateContent("businessName", event.target.value)} /></div><div className="field"><label htmlFor="hero-title">Frase principal</label><input id="hero-title" value={config.content.heroTitle} maxLength={120} onChange={(event) => updateContent("heroTitle", event.target.value)} /></div><div className="field"><label htmlFor="hero-subtitle">Subtítulo</label><textarea id="hero-subtitle" value={config.content.heroSubtitle} maxLength={240} onChange={(event) => updateContent("heroSubtitle", event.target.value)} /></div><div className="field"><label htmlFor="intro">Posicionamento</label><textarea id="intro" value={config.content.introduction} maxLength={800} onChange={(event) => updateContent("introduction", event.target.value)} /></div><div className="field"><label htmlFor="story">História do negócio</label><textarea id="story" value={config.content.story} maxLength={2400} onChange={(event) => updateContent("story", event.target.value)} /></div><div className="field"><label htmlFor="button-text">Texto do botão principal</label><input id="button-text" value={config.content.primaryButton} maxLength={40} onChange={(event) => updateContent("primaryButton", event.target.value)} /></div><div className="field"><label htmlFor="booking-notice">Aviso antes do agendamento</label><textarea id="booking-notice" value={config.content.bookingNotice} maxLength={300} onChange={(event) => updateContent("bookingNotice", event.target.value)} /></div><div className="field"><label htmlFor="footer-text">Texto do rodapé</label><input id="footer-text" value={config.content.footerText} maxLength={240} onChange={(event) => updateContent("footerText", event.target.value)} /></div></section>
+
+      <section className="editor-group"><header><h2>Diferenciais</h2><p>Use apenas informações verdadeiras sobre o negócio. Estes itens também formam as etapas de experiência nos modelos que possuem processo.</p></header><div className="editor-collection">{config.differentials.map((item, index) => <article key={item.id}><div className="field"><label htmlFor={`differential-title-${item.id}`}>Título</label><input id={`differential-title-${item.id}`} value={item.title} maxLength={80} onChange={(event) => setConfig((current) => ({ ...current, differentials: current.differentials.map((entry, itemIndex) => itemIndex === index ? { ...entry, title: event.target.value } : entry) }))} /></div><div className="field"><label htmlFor={`differential-description-${item.id}`}>Descrição</label><textarea id={`differential-description-${item.id}`} value={item.description} maxLength={300} onChange={(event) => setConfig((current) => ({ ...current, differentials: current.differentials.map((entry, itemIndex) => itemIndex === index ? { ...entry, description: event.target.value } : entry) }))} /></div><button type="button" className="text-button danger" onClick={() => setConfig((current) => ({ ...current, differentials: current.differentials.filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 /> Remover</button></article>)}</div><button type="button" className="button button-secondary" disabled={config.differentials.length >= 8} onClick={() => setConfig((current) => ({ ...current, differentials: [...current.differentials, { id: crypto.randomUUID(), title: "", description: "" }] }))}><Plus /> Adicionar diferencial</button></section>
+
+      <section className="editor-group"><header><h2>Depoimentos reais</h2><p>Cadastre somente relatos recebidos de clientes. A seção desaparece quando estiver vazia.</p></header><div className="editor-collection">{config.testimonials.map((item, index) => <article key={item.id}><div className="field"><label htmlFor={`testimonial-name-${item.id}`}>Nome do cliente</label><input id={`testimonial-name-${item.id}`} value={item.name} maxLength={80} onChange={(event) => setConfig((current) => ({ ...current, testimonials: current.testimonials.map((entry, itemIndex) => itemIndex === index ? { ...entry, name: event.target.value } : entry) }))} /></div><div className="field"><label htmlFor={`testimonial-text-${item.id}`}>Depoimento</label><textarea id={`testimonial-text-${item.id}`} value={item.text} maxLength={600} onChange={(event) => setConfig((current) => ({ ...current, testimonials: current.testimonials.map((entry, itemIndex) => itemIndex === index ? { ...entry, text: event.target.value } : entry) }))} /></div><div className="field"><label htmlFor={`testimonial-context-${item.id}`}>Contexto opcional</label><input id={`testimonial-context-${item.id}`} value={item.context} maxLength={120} placeholder="Ex.: cliente desde 2024" onChange={(event) => setConfig((current) => ({ ...current, testimonials: current.testimonials.map((entry, itemIndex) => itemIndex === index ? { ...entry, context: event.target.value } : entry) }))} /></div><button type="button" className="text-button danger" onClick={() => setConfig((current) => ({ ...current, testimonials: current.testimonials.filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 /> Remover</button></article>)}</div><button type="button" className="button button-secondary" disabled={config.testimonials.length >= 12} onClick={() => setConfig((current) => ({ ...current, testimonials: [...current.testimonials, { id: crypto.randomUUID(), name: "", text: "", context: "" }] }))}><Plus /> Adicionar depoimento</button></section>
+
+      <section className="editor-group"><header><h2>Perguntas frequentes</h2><p>Responda às dúvidas que seus clientes realmente fazem.</p></header><div className="editor-collection">{config.faq.map((item, index) => <article key={item.id}><div className="field"><label htmlFor={`faq-question-${item.id}`}>Pergunta</label><input id={`faq-question-${item.id}`} value={item.question} maxLength={180} onChange={(event) => setConfig((current) => ({ ...current, faq: current.faq.map((entry, itemIndex) => itemIndex === index ? { ...entry, question: event.target.value } : entry) }))} /></div><div className="field"><label htmlFor={`faq-answer-${item.id}`}>Resposta</label><textarea id={`faq-answer-${item.id}`} value={item.answer} maxLength={1000} onChange={(event) => setConfig((current) => ({ ...current, faq: current.faq.map((entry, itemIndex) => itemIndex === index ? { ...entry, answer: event.target.value } : entry) }))} /></div><button type="button" className="text-button danger" onClick={() => setConfig((current) => ({ ...current, faq: current.faq.filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 /> Remover</button></article>)}</div><button type="button" className="button button-secondary" disabled={config.faq.length >= 12} onClick={() => setConfig((current) => ({ ...current, faq: [...current.faq, { id: crypto.randomUUID(), question: "", answer: "" }] }))}><Plus /> Adicionar pergunta</button></section>
+
+      {props.professionals.length > 0 && <section className="editor-group"><header><h2>Credenciais dos profissionais</h2><p>Informe apenas formação, registro ou especialidade verdadeira. O campo vazio não aparece na página.</p></header>{props.professionals.map((professional) => <div className="field" key={professional.id}><label htmlFor={`credential-${professional.id}`}>{professional.name}</label><input id={`credential-${professional.id}`} value={config.professionalCredentials[professional.id] || ""} maxLength={240} placeholder="Ex.: Especialista em colorimetria" onChange={(event) => setConfig((current) => ({ ...current, professionalCredentials: { ...current.professionalCredentials, [professional.id]: event.target.value } }))} /></div>)}</section>}
 
       <section className="editor-group"><header><h2>Contato e localização</h2><p>Dados exibidos nesta página.</p></header><div className="field"><label htmlFor="page-whatsapp">WhatsApp</label><input id="page-whatsapp" value={config.contact.whatsapp} maxLength={24} onChange={(event) => updateContact("whatsapp", event.target.value)} /></div><div className="field"><label htmlFor="page-instagram">Instagram</label><input id="page-instagram" value={config.contact.instagram} maxLength={80} onChange={(event) => updateContact("instagram", event.target.value)} /></div><div className="field"><label htmlFor="page-address">Endereço</label><input id="page-address" value={config.contact.address} maxLength={240} onChange={(event) => updateContact("address", event.target.value)} /></div></section>
 
@@ -155,6 +183,6 @@ export function PublicPageEditor(props: Props) {
       </div>
     </aside>
 
-    <section className="studio-preview-panel"><header><div><strong>Prévia em tempo real</strong><span>Mesmos componentes da página publicada</span></div><div><button type="button" className={viewport === "mobile" ? "active" : ""} onClick={() => setViewport("mobile")}><Smartphone /> Celular</button><button type="button" className={viewport === "desktop" ? "active" : ""} onClick={() => setViewport("desktop")}><Laptop /> Computador</button></div></header><div className={`studio-preview-frame ${viewport}`}><PublicPageView business={props.business} services={props.services} professionals={props.professionals} config={config} booking={previewBooking} preview /></div></section>
+    <section className="studio-preview-panel"><header><div><strong>Prévia em tempo real</strong><span>Mesmos componentes da página publicada</span></div><div><button type="button" className={viewport === "mobile" ? "active" : ""} onClick={() => setViewport("mobile")}><Smartphone /> Celular</button><button type="button" className={viewport === "tablet" ? "active" : ""} onClick={() => setViewport("tablet")}><Tablet /> Tablet</button><button type="button" className={viewport === "desktop" ? "active" : ""} onClick={() => setViewport("desktop")}><Laptop /> Computador</button></div></header><div className={`studio-preview-frame ${viewport}`}><PublicPageView business={props.business} services={props.services} professionals={props.professionals} businessHours={props.businessHours} config={config} booking={previewBooking} preview /></div></section>
   </div>;
 }
