@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireBusiness } from "@/lib/dashboard";
+import { hasServiceSuggestions } from "@/lib/service-suggestions";
 import {
   businessSettingsSchema,
   professionalSchema,
@@ -67,6 +68,21 @@ export async function deleteService(formData: FormData) {
   const { error } = await supabase.from("services").delete().eq("id", String(formData.get("id") || "")).eq("business_id", business.id);
   if (error) fail(path, "Esse serviço possui histórico. Desative-o para preservá-lo.");
   ok(path, "Serviço excluído.");
+}
+
+export async function addSuggestedServices() {
+  const path = "/dashboard/servicos";
+  const { supabase, business } = await requireBusiness();
+  if (!hasServiceSuggestions(business.segment)) {
+    fail(path, "Não existem sugestões prontas para este segmento. Cadastre seus serviços personalizados.");
+  }
+
+  const { data, error } = await supabase.rpc("add_suggested_services");
+  if (error) fail(path, "Não foi possível adicionar os serviços sugeridos. Verifique se a migration mais recente foi aplicada.");
+
+  const added = typeof data === "number" ? data : Number(data ?? 0);
+  if (added === 0) ok(path, "Todos os serviços sugeridos já estão cadastrados.");
+  ok(path, `${added} ${added === 1 ? "serviço sugerido adicionado" : "serviços sugeridos adicionados"}.`);
 }
 
 export async function saveProfessional(formData: FormData) {

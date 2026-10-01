@@ -450,6 +450,15 @@ button:disabled { cursor: not-allowed; opacity: .48; transform: none !important;
 .page-title p { max-width: 720px; margin: 12px 0 0; color: var(--muted); line-height: 1.65; }
 .form-message { padding: 14px 16px; border-radius: 10px; background: #fae3dc; color: #792d20; font-size: 13px; line-height: 1.5; }
 .form-message.success { background: #dcece1; color: #19583d; }
+.suggestion-callout { margin-bottom: 24px; padding: 20px 22px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 16px; border: 1px solid #cbbf9b; border-radius: 14px; background: #f3eacb; }
+.suggestion-callout.quiet { grid-template-columns: auto minmax(0,1fr); border-color: var(--line); background: var(--paper-light); }
+.suggestion-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: var(--green); color: var(--paper-light); }
+.suggestion-icon svg { width: 20px; }
+.suggestion-callout h2 { margin: 0; font-size: 17px; letter-spacing: -.015em; }
+.suggestion-callout p { max-width: 72ch; margin: 5px 0 0; color: #645d47; font-size: 12px; line-height: 1.6; }
+.suggestion-callout.quiet p { color: var(--muted); }
+.suggestion-callout form { margin: 0; }
+.suggestion-callout .button { min-height: 46px; white-space: nowrap; }
 .split-workspace { display: grid; grid-template-columns: minmax(320px,.78fr) minmax(440px,1.22fr); gap: 24px; align-items: start; }
 .editor-panel, .records-panel, .schedule-editor-section, .agenda-day, .client-directory, .settings-form, .publish-panel, .history-section { padding: 28px; border-radius: 16px; background: var(--paper-light); }
 .editor-panel, .settings-form { display: grid; gap: 19px; }
@@ -476,6 +485,8 @@ button:disabled { cursor: not-allowed; opacity: .48; transform: none !important;
 .input-suffix span, .input-prefix span { padding: 0 13px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .record-list { display: grid; gap: 10px; }
 .record-item { border-bottom: 1px solid var(--line); }
+.record-item.is-paused { opacity: .72; }
+.record-item.is-paused .record-icon { background: #eee9df; color: var(--muted); }
 .record-item summary { min-height: 76px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 13px; align-items: center; cursor: pointer; list-style: none; }
 .record-item summary::-webkit-details-marker { display: none; }
 .record-item summary > span:nth-child(2) { min-width: 0; display: grid; gap: 5px; }
@@ -616,6 +627,8 @@ button:disabled { cursor: not-allowed; opacity: .48; transform: none !important;
 
 @media (max-width: 1050px) {
   .split-workspace, .settings-grid { grid-template-columns: 1fr; }
+  .suggestion-callout { grid-template-columns: auto minmax(0,1fr); }
+  .suggestion-callout form { grid-column: 2; }
   .publish-panel { position: static; }
   .appointment-row { grid-template-columns: 70px 1fr auto; }
   .appointment-actions { grid-column: 2/-1; padding-bottom: 14px; }
@@ -643,6 +656,9 @@ button:disabled { cursor: not-allowed; opacity: .48; transform: none !important;
   .page-title { margin-bottom: 22px; }
   .page-title h1 { font-size: 39px; }
   .page-title p { font-size: 14px; }
+  .suggestion-callout, .suggestion-callout.quiet { padding: 18px 16px; grid-template-columns: 1fr; }
+  .suggestion-callout form { grid-column: 1; }
+  .suggestion-callout .button { width: 100%; }
   .editor-panel, .records-panel, .schedule-editor-section, .agenda-day, .client-directory, .settings-form, .publish-panel, .history-section { padding: 20px 16px; }
   .form-grid.two { grid-template-columns: 1fr; }
   .field input, .field select, .field textarea, .filter-bar input, .filter-bar select, .search-bar input { font-size: 16px; }

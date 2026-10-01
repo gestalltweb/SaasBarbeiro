@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { businessSegments } from "./service-suggestions";
 
 export const authSchema = z.object({
   email: z.email("Informe um e-mail válido.").trim().toLowerCase(),
@@ -24,7 +25,7 @@ export const businessSchema = z.object({
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Use apenas letras minúsculas, números e hífens.",
     ),
-  segment: z.enum(["barbershop", "hair_salon", "aesthetics", "other"]),
+  segment: z.enum(businessSegments),
 });
 
 export type BusinessInput = z.infer<typeof businessSchema>;
