@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { businessSegments } from "./service-suggestions";
+import { pageModes, pageSections, pageTemplates } from "./public-page";
 
 export const authSchema = z.object({
   email: z.email("Informe um e-mail válido.").trim().toLowerCase(),
@@ -71,3 +72,43 @@ export const unavailabilitySchema = z.object({
   endsLocal: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Informe o término."),
   reason: optionalText(240),
 }).refine((value) => value.startsLocal < value.endsLocal, { message: "O término precisa ser posterior ao início." });
+
+const shortText = (maximum: number) => z.string().trim().max(maximum);
+const mediaItemSchema = z.object({ url: z.union([z.literal(""), z.url()]), path: shortText(500), alt: shortText(120) });
+
+export const publicPageConfigSchema = z.object({
+  version: z.literal(1),
+  mode: z.enum(pageModes),
+  template: z.enum(pageTemplates),
+  palette: shortText(40),
+  theme: z.enum(["light", "dark"]),
+  font: z.enum(["editorial", "modern", "classic"]),
+  buttonShape: z.enum(["soft", "square", "pill"]),
+  cardStyle: z.enum(["flat", "bordered", "elevated"]),
+  colors: z.object({
+    primary: z.string().regex(/^#[0-9a-f]{6}$/i),
+    secondary: z.string().regex(/^#[0-9a-f]{6}$/i),
+    button: z.string().regex(/^#[0-9a-f]{6}$/i),
+  }),
+  content: z.object({
+    businessName: shortText(100),
+    heroTitle: shortText(120), heroSubtitle: shortText(240), introduction: shortText(800),
+    primaryButton: shortText(40), bookingNotice: shortText(300), footerText: shortText(240),
+    seoTitle: shortText(70), seoDescription: shortText(170),
+  }),
+  contact: z.object({ whatsapp: shortText(24), instagram: shortText(80), address: shortText(240) }),
+  sections: z.array(z.object({ id: z.enum(pageSections), visible: z.boolean() })).length(pageSections.length),
+  serviceOrder: z.array(z.uuid()).max(200),
+  professionalOrder: z.array(z.uuid()).max(200),
+  media: z.object({
+    logoUrl: z.union([z.literal(""), z.url()]), logoPath: shortText(500),
+    coverUrl: z.union([z.literal(""), z.url()]), coverPath: shortText(500),
+    shareUrl: z.union([z.literal(""), z.url()]), sharePath: shortText(500),
+    gallery: z.array(mediaItemSchema).max(12),
+    professionalPhotos: z.record(z.string(), z.object({ url: z.url(), path: shortText(500) })),
+  }),
+}).superRefine((config, context) => {
+  if (new Set(config.sections.map((section) => section.id)).size !== pageSections.length) {
+    context.addIssue({ code: "custom", message: "A ordem das seções é inválida." });
+  }
+});

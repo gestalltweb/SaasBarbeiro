@@ -245,24 +245,3 @@ export async function updateBusinessSettings(formData: FormData) {
   if (error) fail(path, "Não foi possível atualizar as configurações.");
   ok(path, "Configurações atualizadas.");
 }
-
-export async function setBusinessPublished(formData: FormData) {
-  const path = "/dashboard/configuracoes";
-  const publish = formData.get("publish") === "true";
-  const { supabase, business } = await requireBusiness();
-  if (publish) {
-    const [services, professionals, businessHours, professionalHours] = await Promise.all([
-      supabase.from("services").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("is_active", true),
-      supabase.from("professionals").select("id", { count: "exact", head: true }).eq("business_id", business.id).eq("is_active", true),
-      supabase.from("business_hours").select("id", { count: "exact", head: true }).eq("business_id", business.id),
-      supabase.from("professional_hours").select("id", { count: "exact", head: true }).eq("business_id", business.id),
-    ]);
-    if (!services.count || !professionals.count || !businessHours.count || !professionalHours.count) {
-      fail(path, "Cadastre serviço, profissional e horários antes de publicar.");
-    }
-  }
-  const { error } = await supabase.from("businesses").update({ is_published: publish }).eq("id", business.id);
-  if (error) fail(path, "Não foi possível alterar a publicação.");
-  revalidatePath(`/${business.slug}`);
-  ok(path, publish ? "Página publicada." : "Página retirada do ar.");
-}

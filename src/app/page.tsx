@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import { brand } from "@/lib/brand";
+import { getSiteUrl } from "@/lib/site-url";
 
 const agenda = [
   { time: "09:00", name: "Marcos", service: "Corte", tone: "green" },
@@ -103,7 +104,7 @@ export default function Home() {
       <section className="showcase" id="recursos">
         <div className="page-shell showcase-grid">
           <div className="phone-frame">
-            <div className="phone-browser"><span /><span>{brand.domain}/barbearia-modelo</span></div>
+            <div className="phone-browser"><span /><span>{getSiteUrl()}/barbearia-modelo</span></div>
             <div className="phone-cover"><span className="mini-logo">RB</span><p>Barbearia Modelo</p><h3>Seu estilo começa com hora marcada.</h3><div className="phone-location"><MapPin size={14} /> Centro · São Paulo</div></div>
             <div className="phone-services"><span>Serviços</span><div><strong>Corte clássico</strong><b>R$ 45</b><small>40 min</small></div><div><strong>Corte + barba</strong><b>R$ 70</b><small>60 min</small></div><button>Escolher um horário</button></div>
           </div>

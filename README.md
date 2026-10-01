@@ -35,6 +35,7 @@ Fundação de um SaaS multiempresa para negócios que trabalham com horário mar
    - `202609290001_foundation.sql`: autenticação, empresas, membros e RLS base;
    - `202609300001_operational_mvp.sql`: serviços, profissionais, horários, clientes, agenda e funções transacionais de agendamento;
    - `202610010001_service_suggestions.sql`: catálogo por segmento, inclusão idempotente e criação automática de serviços no onboarding.
+   - `202610010002_public_page_studio.sql`: rascunho e publicação da página pública, modelos, auditoria e Storage protegido por empresa.
 
 4. Inicie o ambiente:
 
@@ -61,7 +62,7 @@ A criação de um negócio ocorre por uma função transacional no banco: empres
 
 ## Escopo atual
 
-O MVP inclui autenticação, tenant, onboarding com serviços sugeridos por segmento, serviços, profissionais, expediente, jornadas individuais, bloqueios, disponibilidade real, agendamento público protegido contra conflitos, agenda, clientes, configurações e publicação da página. Notificações e cobrança permanecem fora deste MVP.
+O MVP inclui autenticação, tenant, onboarding com serviços sugeridos por segmento, serviços, profissionais, expediente, jornadas individuais, bloqueios, disponibilidade real, agendamento público protegido contra conflitos, agenda, clientes e um estúdio de página pública com rascunho, quatro modelos e publicação versionada. Notificações e cobrança permanecem fora deste MVP.
 
 ## Agendamento seguro
 
