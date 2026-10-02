@@ -6,10 +6,10 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Check, ExternalLink, Eye, FileText, Image, ImagePlus, Laptop, LoaderCircle, Palette, Plus, RotateCcw, Save, SlidersHorizontal, Smartphone, Sparkles, Tablet, Trash2 } from "lucide-react";
 import { PublicPageView, type PublicPageBusiness, type PublicPageBusinessHour, type PublicPageProfessional, type PublicPageService } from "@/components/public-page-view";
-import { applyTemplate, firstPalette, orderForPublic, recommendedTemplates, templateDetails, templatePalettes, templatePreviewAssets, type PageMode, type PageSection, type PageTemplate, type PublicPageConfig } from "@/lib/public-page";
+import { applyTemplate, orderForPublic, recommendedTemplates, templateDetails, templatePreviewAssets, templatesForSegment, type PageMode, type PageSection, type PageTemplate, type PublicPageConfig } from "@/lib/public-page";
 import type { BusinessSegment } from "@/lib/service-suggestions";
 import { deletePublicPageImage, uploadPublicPageImage, uploadPublicPageMedia } from "@/lib/media-upload";
-import { autoSavePublicPageDraft, publishPageChanges, restorePageDefault, saveAndPreviewPublicPage, savePublicPageDraft, unpublishPublicPage } from "./actions";
+import { autoSavePublicPageDraft, publishPageChanges, restorePageDefault, saveAndPreviewPublicPage, savePublicPageDraft, setTemplateChangeNoticeDismissed, unpublishPublicPage } from "./actions";
 
 type Props = {
   businessId: string;
@@ -24,6 +24,7 @@ type Props = {
   isPublished: boolean;
   ready: boolean;
   publicUrl: string;
+  dismissTemplateChangeNotice: boolean;
 };
 
 const sectionLabels: Record<PageSection, string> = {
@@ -98,6 +99,8 @@ export function PublicPageEditor(props: Props) {
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "error">("saved");
   const [isAutoSaving, startAutoSave] = useTransition();
+  const [pendingTemplate, setPendingTemplate] = useState<PageTemplate | null>(null);
+  const [dismissTemplateNotice, setDismissTemplateNotice] = useState(props.dismissTemplateChangeNotice);
   const initialRender = useRef(true);
   const recommended = recommendedTemplates(props.segment);
   const configJson = useMemo(() => JSON.stringify(config), [config]);
@@ -122,12 +125,15 @@ export function PublicPageEditor(props: Props) {
   }
 
   function selectTemplate(template: PageTemplate) {
-    if (template !== config.template && !window.confirm("O novo modelo substituirá cores, tipografia e formato visual do rascunho. Seus textos e dados operacionais serão mantidos. Continuar?")) return;
-    setConfig((current) => applyTemplate(current, template, firstPalette(template)));
+    if (template !== config.template && !dismissTemplateNotice) { setPendingTemplate(template); return; }
+    setConfig((current) => applyTemplate(current, template));
   }
 
-  function selectPalette(palette: string) {
-    setConfig((current) => applyTemplate(current, current.template, palette));
+  function confirmTemplateChange() {
+    if (!pendingTemplate) return;
+    setConfig((current) => applyTemplate(current, pendingTemplate));
+    setPendingTemplate(null);
+    if (dismissTemplateNotice) startAutoSave(async () => { await setTemplateChangeNoticeDismissed(true); });
   }
 
   function updateContent(key: keyof PublicPageConfig["content"], value: string) { setConfig((current) => ({ ...current, content: { ...current.content, [key]: value } })); }
@@ -136,6 +142,7 @@ export function PublicPageEditor(props: Props) {
   const previewBooking = <div className="booking-card preview-booking"><span>Prévia do agendamento</span><strong>Serviço → profissional → data → horário</strong><p>Na página publicada, este bloco usa a disponibilidade real da agenda.</p><button type="button" disabled>Escolher horário</button></div>;
 
   return <div className="page-studio-layout">
+    {pendingTemplate && <div className="app-modal-backdrop" role="presentation"><section className="app-modal" role="dialog" aria-modal="true" aria-labelledby="template-change-title"><h2 id="template-change-title">Mudar o modelo desta página?</h2><p>A aparência e a organização da página vão mudar. Serviços, profissionais, horários, clientes e agendamentos continuam preservados. Conteúdos compatíveis permanecem no rascunho.</p><label className="modal-checkbox"><input type="checkbox" checked={dismissTemplateNotice} onChange={(event) => setDismissTemplateNotice(event.target.checked)} /> Não mostrar novamente</label><div className="modal-actions"><button type="button" className="button button-secondary" onClick={() => setPendingTemplate(null)}>Cancelar</button><button type="button" className="button" onClick={confirmTemplateChange}>Continuar</button></div></section></div>}
     <aside className="page-editor-panel">
       <div className="studio-mode-switch" aria-label="Modo de configuração">
         <button type="button" className={config.mode === "manual" ? "active" : ""} onClick={() => changeMode("manual")}>Montar manualmente</button>
@@ -160,11 +167,11 @@ export function PublicPageEditor(props: Props) {
       {activeTab === "design" && (
         config.mode === "template" ? (
           <>
-            <ol className="studio-progress"><li className="complete"><Check /> Modelo</li><li className="complete"><Check /> Paleta</li><li className="active">Marca</li><li>Visualizar</li><li>Publicar</li></ol>
+            <ol className="studio-progress"><li className="complete"><Check /> Modelo</li><li className="complete"><Check /> Identidade</li><li className="active">Conteúdo</li><li>Visualizar</li><li>Publicar</li></ol>
             {recommended.length > 0 && <section className="recommended-template"><div><Sparkles /><span><strong>Modelo recomendado para o seu segmento</strong><small>{recommended.map((item) => templateDetails[item].name).join(" ou ")}</small></span></div><button type="button" onClick={() => selectTemplate(recommended[0])}>Usar modelo recomendado</button></section>}
-            <section className="editor-group"><header><h2>Escolha o modelo</h2><p>Cada miniatura representa uma landing page com estrutura própria.</p></header><div className="template-picker">{(Object.keys(templateDetails) as PageTemplate[]).map((template) => <button type="button" className={config.template === template ? "selected" : ""} onClick={() => selectTemplate(template)} key={template}><span className="template-miniature real-preview" style={{ backgroundImage: `url(${templatePreviewAssets[template].moodboard})` }} /><strong>{templateDetails[template].name}</strong><small>{templateDetails[template].description}</small>{recommended.includes(template) && <mark>Recomendado</mark>}</button>)}</div></section>
-            <section className="editor-group"><header><h2>Paleta</h2><p>Escolha visualmente uma combinação testada.</p></header><div className="palette-picker">{Object.entries(templatePalettes[config.template]).map(([key, palette]) => <button type="button" className={config.palette === key ? "selected" : ""} onClick={() => selectPalette(key)} key={key}><span><i style={{ background: palette.primary }} /><i style={{ background: palette.secondary }} /><i style={{ background: palette.button }} /></span><strong>{palette.name}</strong></button>)}</div></section>
-            <section className="editor-group"><header><h2>Direção de arte original</h2><p>Materiais decorativos gerados para o modelo. Eles não representam profissionais ou clientes reais e podem ser substituídos pelas suas imagens.</p></header><div className="template-art-library">{(["barbershop", "hairSalon", "aesthetics"] as const).map((kind) => <button type="button" key={kind} onClick={() => setConfig((current) => ({ ...current, media: { ...current.media, coverUrl: templatePreviewAssets[current.template][kind], coverPath: "", coverType: "image" } }))}><img src={templatePreviewAssets[config.template][kind]} alt="Material decorativo original" /><span>{kind === "barbershop" ? "Barbearia" : kind === "hairSalon" ? "Salão" : "Estética"}</span></button>)}</div></section>
+            <section className="editor-group"><header><h2>Escolha o modelo</h2><p>Estes cinco modelos foram criados para o segmento do seu negócio.</p></header><div className="template-picker">{templatesForSegment(props.segment).map((template) => <button type="button" className={config.template === template ? "selected" : ""} onClick={() => selectTemplate(template)} key={template}><span className="template-miniature real-preview" style={{ backgroundImage: `url(${templatePreviewAssets[template].moodboard})` }} /><strong>{templateDetails[template].name}</strong><small>{templateDetails[template].description}</small>{recommended[0] === template && <mark>Recomendado</mark>}</button>)}</div></section>
+            <section className="editor-group"><header><h2>Direção de arte original</h2><p>Este material foi criado para o seu segmento e pode ser substituído pelas suas imagens.</p></header><div className="template-art-library"><button type="button" onClick={() => setConfig((current) => ({ ...current, media: { ...current.media, coverUrl: templatePreviewAssets[current.template].hero, coverPath: "", coverType: "image" } }))}><img src={templatePreviewAssets[config.template].hero} alt="Material decorativo original do modelo" /><span>Usar arte do modelo</span></button></div></section>
+            <details className="identity-customizer"><summary>Personalizar a cor de destaque</summary><p>Altere apenas o destaque da marca. O modelo preserva a estrutura, o contraste e os demais elementos visuais.</p><div className="form-grid two"><div className="field color-field"><label htmlFor="template-accent">Cor de destaque</label><input id="template-accent" type="color" value={config.colors.button} onChange={(event) => setConfig((current) => ({ ...current, colors: { ...current.colors, button: event.target.value, secondary: event.target.value } }))} /></div><div className="field identity-reset"><label>Modelo original</label><button type="button" className="button button-secondary" onClick={() => setConfig((current) => applyTemplate(current, current.template))}>Restaurar identidade</button></div></div></details>
           </>
         ) : (
           <section className="editor-group"><header><h2>Aparência manual</h2><p>Opções seguras, sem código personalizado.</p></header><div className="form-grid three"><div className="field color-field"><label htmlFor="primary-color">Principal</label><input id="primary-color" type="color" value={config.colors.primary} onChange={(event) => setConfig((current) => ({ ...current, colors: { ...current.colors, primary: event.target.value } }))} /></div><div className="field color-field"><label htmlFor="secondary-color">Secundária</label><input id="secondary-color" type="color" value={config.colors.secondary} onChange={(event) => setConfig((current) => ({ ...current, colors: { ...current.colors, secondary: event.target.value } }))} /></div><div className="field color-field"><label htmlFor="button-color">Botões</label><input id="button-color" type="color" value={config.colors.button} onChange={(event) => setConfig((current) => ({ ...current, colors: { ...current.colors, button: event.target.value } }))} /></div></div><div className="form-grid two"><div className="field"><label htmlFor="theme">Tema</label><select id="theme" value={config.theme} onChange={(event) => setConfig((current) => ({ ...current, theme: event.target.value as PublicPageConfig["theme"] }))}><option value="light">Claro</option><option value="dark">Escuro</option></select></div><div className="field"><label htmlFor="font">Tipografia</label><select id="font" value={config.font} onChange={(event) => setConfig((current) => ({ ...current, font: event.target.value as PublicPageConfig["font"] }))}><option value="editorial">Editorial</option><option value="modern">Moderna</option><option value="classic">Clássica</option></select></div><div className="field"><label htmlFor="buttons">Botões</label><select id="buttons" value={config.buttonShape} onChange={(event) => setConfig((current) => ({ ...current, buttonShape: event.target.value as PublicPageConfig["buttonShape"] }))}><option value="soft">Cantos suaves</option><option value="square">Retos</option><option value="pill">Arredondados</option></select></div><div className="field"><label htmlFor="cards">Cartões</label><select id="cards" value={config.cardStyle} onChange={(event) => setConfig((current) => ({ ...current, cardStyle: event.target.value as PublicPageConfig["cardStyle"] }))}><option value="flat">Planos</option><option value="bordered">Com borda</option><option value="elevated">Elevados</option></select></div></div></section>

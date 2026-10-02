@@ -65,7 +65,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="schedule-scene" aria-label="Exemplo de agenda organizada">
+        <div className="schedule-scene" aria-label="Exemplo visual de agenda organizada">
           <div className="schedule-topline">
             <div><span>Hoje</span><strong>Terça, 29 de setembro</strong></div>
             <span className="online-dot">Agenda online</span>
@@ -79,7 +79,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className="schedule-footer"><span>4 horários organizados</span><span>0 mensagens pendentes</span></div>
+          <div className="schedule-footer"><span>Exemplo visual de agenda</span><span>Atualização em tempo real</span></div>
         </div>
       </section>
 
@@ -119,9 +119,9 @@ export default function Home() {
 
       <section className="dashboard-section page-shell">
         <div className="dashboard-copy"><h2>Seu dia inteiro, sem procurar conversa por conversa.</h2><p>Veja o que vem a seguir, organize a equipe e mantenha as informações do negócio atualizadas em um painel direto.</p><div className="feature-lines"><span><LayoutDashboard /> Visão clara da operação</span><span><CalendarCheck /> Agenda por profissional</span><span><Users /> Histórico dos seus clientes</span></div></div>
-        <div className="dashboard-preview" aria-label="Prévia do painel administrativo">
+        <div className="dashboard-preview" aria-label="Prévia ilustrativa do painel administrativo">
           <div className="preview-sidebar"><span className="preview-mark">A</span><i /><i /><i /><i /></div>
-          <div className="preview-content"><div className="preview-title"><div><small>Bom dia, João</small><strong>Sua agenda de hoje</strong></div><button>+ Novo horário</button></div><div className="preview-summary"><span><small>Agendamentos</small><b>8</b></span><span><small>Confirmados</small><b>6</b></span><span><small>Horários livres</small><b>4</b></span></div><div className="preview-table"><span>09:00</span><b>Marcos Lima</b><small>Corte clássico</small><em>Confirmado</em><span>10:00</span><b>André Souza</b><small>Corte + barba</small><em>Confirmado</em><span>11:30</span><b>Paulo Reis</b><small>Barba</small><em className="pending">Pendente</em></div></div>
+          <div className="preview-content"><div className="preview-title"><div><small>Exemplo visual</small><strong>Sua agenda de hoje</strong></div><button>+ Novo horário</button></div><div className="preview-summary"><span><small>Agendamentos</small><b>—</b></span><span><small>Confirmados</small><b>—</b></span><span><small>Horários livres</small><b>—</b></span></div><div className="preview-table"><span>09:00</span><b>Cliente</b><small>Serviço</small><em>Confirmado</em><span>10:00</span><b>Cliente</b><small>Serviço</small><em>Confirmado</em><span>11:30</span><b>Cliente</b><small>Serviço</small><em className="pending">Pendente</em></div></div>
         </div>
       </section>
 

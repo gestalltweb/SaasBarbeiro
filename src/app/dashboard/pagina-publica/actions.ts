@@ -81,6 +81,22 @@ export async function autoSavePublicPageDraft(configJson: string): Promise<{ ok:
   }
 }
 
+export async function setTemplateChangeNoticeDismissed(dismissed: boolean): Promise<void> {
+  const { supabase, user } = await requireBusiness();
+  const { error } = await supabase.from("user_public_page_preferences").upsert({
+    user_id: user.id,
+    dismiss_template_change_notice: dismissed,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw new Error("Não foi possível salvar sua preferência.");
+}
+
+export async function reactivateTemplateChangeNotice() {
+  await setTemplateChangeNoticeDismissed(false);
+  revalidatePath("/dashboard/configuracoes");
+  redirect("/dashboard/configuracoes?sucesso=O aviso%20de%20troca%20de%20modelo%20foi%20reativado.");
+}
+
 export async function saveAndPreviewPublicPage(formData: FormData) {
   const { business } = await requireBusiness();
   const config = parseConfig(formData.get("config"), business.id);
