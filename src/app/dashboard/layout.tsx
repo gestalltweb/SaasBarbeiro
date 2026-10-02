@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ExternalLink, LogOut, Settings } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { signOut } from "@/app/auth/actions";
 import { DashboardNav, MobileDashboardNav } from "@/components/dashboard-nav";
+import { DashboardTopbar } from "@/components/dashboard-topbar";
 import { brand } from "@/lib/brand";
 import { requireBusiness } from "@/lib/dashboard";
 
@@ -17,7 +18,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
     </aside>
     <section className="app-main">
-      <header className="app-topbar"><div><small>Seu negócio</small><strong>{business.name}</strong></div><Link href={`/${business.slug}`} target="_blank">Ver página <ExternalLink size={15} /></Link></header>
+      <DashboardTopbar businessName={business.name} slug={business.slug} isPublished={business.is_published} />
       {children}
     </section>
     <MobileDashboardNav />
