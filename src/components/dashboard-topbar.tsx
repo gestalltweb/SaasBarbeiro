@@ -24,7 +24,7 @@ export function DashboardTopbar({ businessName, slug, isPublished }: { businessN
     <div className="topbar-business-context">
       <span className="business-monogram" aria-hidden="true">{monogram || "AL"}</span>
       <div><small>{businessName}</small><span className={isPublished ? "business-page-status is-live" : "business-page-status"}><i />{isPublished ? "Página publicada" : "Página em rascunho"}</span></div>
-      <Link href={`/${slug}`} target="_blank">Ver página <ExternalLink size={15} /></Link>
+      <Link href={isPublished ? `/${slug}` : "/dashboard/pagina-publica/preview"} target="_blank">{isPublished ? "Ver página publicada" : "Ver rascunho"} <ExternalLink size={15} /></Link>
     </div>
   </header>;
 }

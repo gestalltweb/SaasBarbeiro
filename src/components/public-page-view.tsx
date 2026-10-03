@@ -5,6 +5,7 @@ import { NoirAtelierTemplate } from "./public-page/templates/noir-atelier";
 import { UrbanSignalTemplate } from "./public-page/templates/urban-signal";
 import type { PublicPageBusiness, PublicPageBusinessHour, PublicPageProfessional, PublicPageService, PublicTemplateProps } from "./public-page/types";
 import { orderForPublic, templateDefinitions, templatePalettes, type PageTemplate } from "@/lib/public-page";
+import { PublicPageMotion } from "./public-page-motion";
 
 export type { PublicPageBusiness, PublicPageBusinessHour, PublicPageProfessional, PublicPageService };
 
@@ -34,5 +35,5 @@ export function PublicPageView(props: PublicTemplateProps) {
   const services = orderForPublic(props.services.filter((service) => service.is_active !== false), props.config.serviceOrder);
   const professionals = orderForPublic(props.professionals.filter((professional) => professional.is_active !== false), props.config.professionalOrder);
   const style = { "--page-primary": palette.primary, "--page-secondary": palette.secondary, "--page-button": palette.button, "--page-bg": palette.background, "--page-ink": palette.ink } as React.CSSProperties;
-  return <div className={`public-page-shell buttons-${props.config.buttonShape} cards-${props.config.cardStyle}`} data-template={props.config.template} style={style}><Template {...props} services={services} professionals={professionals} /></div>;
+  return <PublicPageMotion className={`public-page-shell buttons-${props.config.buttonShape} cards-${props.config.cardStyle}`} template={props.config.template} layout={templateDefinitions[props.config.template].layout} style={style}><Template {...props} services={services} professionals={professionals} /></PublicPageMotion>;
 }

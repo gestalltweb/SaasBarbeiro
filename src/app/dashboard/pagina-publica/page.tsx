@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import type { Metadata } from "next";
 import { Blocks, LayoutTemplate, SlidersHorizontal, Sparkles } from "lucide-react";
 import { StatusMessage } from "@/components/status-message";
@@ -22,8 +23,8 @@ export default async function PublicPageStudio({ searchParams }: { searchParams:
     {status}
     <section className="page-path-intro"><Sparkles /><div><h2>Como você prefere começar?</h2><p>Os dois caminhos usam os mesmos serviços, profissionais, horários e agendamento real. Você poderá trocar depois.</p></div></section>
     <section className="page-path-grid">
-      <article><span><SlidersHorizontal /></span><h2>Quero montar minha página</h2><p>Personalize o modelo, as cores, os textos, as imagens e a organização das seções.</p><small>Mais controle visual, com alguns minutos de configuração.</small><form action={choosePageMode}><input type="hidden" name="mode" value="manual" /><button className="button button-secondary" type="submit">Começar personalização</button></form></article>
-      <article className="recommended"><mark>Recomendado</mark><span><LayoutTemplate /></span><h2>Quero uma página pronta</h2><p>Escolha um modelo profissional, adicione sua marca e publique em poucos minutos.</p><small>Fluxo guiado, paletas testadas e fallback elegante sem imagens.</small><form action={choosePageMode}><input type="hidden" name="mode" value="template" /><button className="button" type="submit">Escolher modelo pronto</button></form></article>
+      <article><span><SlidersHorizontal /></span><h2>Quero montar minha página</h2><p>Personalize o modelo, as cores, os textos, as imagens e a organização das seções.</p><small>Mais controle visual, com alguns minutos de configuração.</small><form action={choosePageMode}><input type="hidden" name="mode" value="manual" /><SubmitButton className="button button-secondary" type="submit">Começar personalização</SubmitButton></form></article>
+      <article className="recommended"><mark>Recomendado</mark><span><LayoutTemplate /></span><h2>Quero uma página pronta</h2><p>Escolha um modelo profissional, adicione sua marca e publique em poucos minutos.</p><small>Fluxo guiado, paletas testadas e fallback elegante sem imagens.</small><form action={choosePageMode}><input type="hidden" name="mode" value="template" /><SubmitButton className="button" type="submit">Escolher modelo pronto</SubmitButton></form></article>
     </section>
     <div className="path-safety-note"><Blocks /><p>Trocar o tipo de página nunca apaga serviços, profissionais, horários, clientes ou agendamentos.</p></div>
   </div>;

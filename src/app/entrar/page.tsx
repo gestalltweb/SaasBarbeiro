@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthShell } from "@/components/auth-shell";
@@ -21,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form className="form-stack" action={signIn}>
           <div className="field"><label htmlFor="email">E-mail</label><input id="email" name="email" type="email" autoComplete="email" placeholder="voce@negocio.com" required /></div>
           <div className="field"><label htmlFor="password">Senha</label><input id="password" name="password" type="password" autoComplete="current-password" minLength={8} required /></div>
-          <button className="button" type="submit">Entrar no painel</button>
+          <SubmitButton className="button" type="submit">Entrar no painel</SubmitButton>
         </form>
         <p className="auth-switch">Ainda não tem conta? <Link href="/cadastro">Comece agora</Link></p>
       </div>

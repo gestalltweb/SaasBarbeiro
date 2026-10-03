@@ -15,13 +15,8 @@ import {
 import { brand } from "@/lib/brand";
 import { getSiteUrl } from "@/lib/site-url";
 import { Reveal } from "@/components/motion";
+import { BookingDemo } from "@/components/booking-demo";
 
-const agenda = [
-  { time: "09:00", name: "Marcos", service: "Atendimento", tone: "green" },
-  { time: "10:00", name: "Horário livre", service: "Disponível online", tone: "free" },
-  { time: "11:30", name: "Bruno", service: "Sessão personalizada", tone: "yellow" },
-  { time: "14:00", name: "Rafael", service: "Consulta", tone: "red" },
-];
 
 export default function Home() {
   return (
@@ -62,26 +57,11 @@ export default function Home() {
           <div className="trust-line">
             <span><Check size={16} /> Configuração guiada</span>
             <span><Check size={16} /> Feito para celular</span>
-            <span><Check size={16} /> Sem taxa de adesão durante o projeto</span>
+            <span><Check size={16} /> Serviços, equipe e horários</span>
           </div>
         </div>
 
-        <div className="schedule-scene" aria-label="Exemplo visual de agenda organizada">
-          <div className="schedule-topline">
-            <div><span>Hoje</span><strong>Terça, 29 de setembro</strong></div>
-            <span className="online-dot">Agenda online</span>
-          </div>
-          <div className="schedule-list">
-            {agenda.map((item, index) => (
-              <div className={`schedule-row schedule-${item.tone}`} key={item.time} style={{ "--delay": `${index * 130}ms` } as React.CSSProperties}>
-                <time>{item.time}</time><span className="schedule-pin" />
-                <div>{item.tone === "free" ? <><strong className="schedule-available-copy">Horário livre</strong><strong className="schedule-booked-copy">Marcos reservou</strong><span className="schedule-available-copy">Disponível online</span><span className="schedule-booked-copy">Atendimento individual</span></> : <><strong>{item.name}</strong><span>{item.service}</span></>}</div>
-                {item.tone !== "free" ? <Check size={17} /> : <span className="schedule-booked-copy schedule-confirmed-label">Reserva criada</span>}
-              </div>
-            ))}
-          </div>
-          <div className="schedule-footer"><span>Exemplo visual de agenda</span><span>Reserva pendente para confirmação</span></div>
-        </div>
+        <BookingDemo />
       </section>
 
       <section className="proof-strip" aria-label="Benefícios principais">
@@ -111,16 +91,16 @@ export default function Home() {
           <span className="journey-arrow"><ArrowRight /></span>
           <article><span className="step-icon"><Users size={23} /></span><h3>Seu cliente escolhe</h3><p>Ele conhece seu trabalho, compara serviços e vê somente horários livres.</p></article>
           <span className="journey-arrow"><ArrowRight /></span>
-          <article><span className="step-icon"><CalendarCheck size={23} /></span><h3>Você recebe organizado</h3><p>O agendamento entra na agenda do profissional, pronto para ser atendido.</p></article>
+          <article><span className="step-icon"><CalendarCheck size={23} /></span><h3>Você recebe organizado</h3><p>A reserva entra na agenda do profissional como pendente, para você confirmar e atender.</p></article>
         </div>
       </section></Reveal>
 
       <Reveal className="motion-section"><section className="showcase" id="recursos">
         <div className="page-shell showcase-grid">
           <div className="phone-frame">
-            <div className="phone-browser"><span /><span>{getSiteUrl()}/seu-negocio</span></div>
+            <div className="phone-browser" aria-label="Página ilustrativa; preços e serviços de exemplo"><span /><span>{getSiteUrl()}/seu-negocio</span></div>
             <div className="phone-cover"><span className="mini-logo">SN</span><p>Seu Negócio</p><h3>Seu atendimento começa com hora marcada.</h3><div className="phone-location"><MapPin size={14} /> Centro · São Paulo</div></div>
-            <div className="phone-services"><span>Serviços</span><div><strong>Atendimento individual</strong><b>R$ 45</b><small>40 min</small></div><div><strong>Sessão personalizada</strong><b>R$ 70</b><small>60 min</small></div><button>Escolher um horário</button></div>
+            <div className="phone-services"><span>Serviços</span><div><strong>Atendimento individual</strong><b>Seu preço</b><small>Sua duração</small></div><div><strong>Sessão personalizada</strong><b>Seu preço</b><small>Sua duração</small></div><Link href="#booking-flow-title">Experimentar o agendamento</Link></div>
           </div>
           <div className="showcase-copy">
             <h2>Uma página que trabalha antes de você responder.</h2>
@@ -135,7 +115,7 @@ export default function Home() {
         <div className="dashboard-copy"><h2>Seu dia inteiro, sem procurar conversa por conversa.</h2><p>Veja o que vem a seguir, organize a equipe e mantenha as informações do negócio atualizadas em um painel direto.</p><div className="feature-lines"><span><LayoutDashboard /> Visão clara da operação</span><span><CalendarCheck /> Agenda por profissional</span><span><Users /> Histórico dos seus clientes</span></div></div>
         <div className="dashboard-preview" aria-label="Prévia ilustrativa do painel administrativo">
           <div className="preview-sidebar"><span className="preview-mark">A</span><i /><i /><i /><i /></div>
-          <div className="preview-content"><div className="preview-title"><div><small>Exemplo visual</small><strong>Sua agenda de hoje</strong></div><button>+ Novo horário</button></div><div className="preview-summary"><span><small>Agendamentos</small><b>—</b></span><span><small>Confirmados</small><b>—</b></span><span><small>Horários livres</small><b>—</b></span></div><div className="preview-table"><span>09:00</span><b>Cliente</b><small>Serviço</small><em>Confirmado</em><span>10:00</span><b>Cliente</b><small>Serviço</small><em>Confirmado</em><span>11:30</span><b>Cliente</b><small>Serviço</small><em className="pending">Pendente</em></div></div>
+          <div className="preview-content"><div className="preview-title"><div><small>Exemplo visual</small><strong>Sua agenda de hoje</strong></div><Link href="/cadastro">Criar minha agenda</Link></div><div className="preview-summary"><span><small>Agendamentos</small><b>—</b></span><span><small>Confirmados</small><b>—</b></span><span><small>Horários livres</small><b>—</b></span></div><div className="preview-table"><span>09:00</span><b>Cliente</b><small>Serviço</small><em>Confirmado</em><span>10:00</span><b>Cliente</b><small>Serviço</small><em>Confirmado</em><span>11:30</span><b>Cliente</b><small>Serviço</small><em className="pending">Pendente</em></div></div>
         </div>
       </section></Reveal>
 
@@ -144,6 +124,13 @@ export default function Home() {
         <div className="plan-board"><div><span>Plano inicial</span><strong>Agendamento + página personalizada</strong></div><ul><li><Check /> Página pública</li><li><Check /> Agenda online</li><li><Check /> Serviços e profissionais</li><li><Check /> Painel administrativo</li></ul><Link className="button" href="/cadastro">Criar minha conta <ArrowRight size={18} /></Link></div>
       </section></Reveal>
 
+      <Reveal><section className="marketing-faq page-shell" id="duvidas"><div className="story-heading"><h2>Antes de começar.</h2><p>O que você precisa saber sobre sua página e sua agenda.</p></div>
+        <details><summary>Serve apenas para barbearias?</summary><p>Não. O Agenda Local atende barbearias, salões, estética e outros negócios que trabalham com hora marcada.</p></details>
+        <details><summary>Como os horários ficam disponíveis?</summary><p>A disponibilidade considera o serviço, a jornada do profissional, o expediente do negócio, os bloqueios e os agendamentos existentes.</p></details>
+        <details><summary>Meu cliente precisa criar uma conta?</summary><p>Não. Ele escolhe o atendimento e informa seus dados de contato na página pública do negócio.</p></details>
+        <details><summary>A página é publicada assim que eu cadastro?</summary><p>Não. Configure serviços, profissionais e horários, revise o rascunho e publique manualmente quando estiver pronto.</p></details>
+        <details><summary>Qual é o preço?</summary><p>O valor do plano ainda não foi definido. Será informado antes do lançamento comercial.</p></details>
+      </section></Reveal>
       <section className="final-cta"><div className="page-shell final-cta-inner"><div><h2>Seu próximo cliente pode agendar sozinho.</h2><p>Crie sua conta e comece a montar a página do seu negócio.</p></div><Link className="button button-light" href="/cadastro">Começar agora <ArrowRight size={18} /></Link></div></section>
 
       <footer className="site-footer page-shell">

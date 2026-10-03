@@ -1,3 +1,4 @@
+import { SubmitButton } from "@/components/submit-button";
 import type { Metadata } from "next";
 import { Clock3, Info, Plus, Scissors, Sparkles, Trash2 } from "lucide-react";
 import { StatusMessage } from "@/components/status-message";
@@ -44,7 +45,7 @@ export default async function ServicesPage({ searchParams }: {
             <p>Criamos alguns serviços comuns para o seu segmento. Revise os preços, as durações e mantenha apenas os serviços oferecidos pelo seu negócio.</p>
           </div>
           <form action={addSuggestedServices}>
-            <button className="button button-secondary" type="submit">Adicionar serviços sugeridos</button>
+            <SubmitButton className="button button-secondary" type="submit">Adicionar serviços sugeridos</SubmitButton>
           </form>
         </section>
       ) : (
@@ -66,7 +67,7 @@ export default async function ServicesPage({ searchParams }: {
             <div className="field"><label htmlFor="duration">Duração</label><div className="input-suffix"><input id="duration" name="durationMinutes" type="number" min={5} max={720} step={5} defaultValue={30} required /><span>min</span></div></div>
             <div className="field"><label htmlFor="price">Preço</label><div className="input-prefix"><span>R$</span><input id="price" name="price" type="number" min={0} max={1000000} step="0.01" defaultValue="0.00" required /></div></div>
           </div>
-          <button className="button" type="submit">Cadastrar serviço</button>
+          <SubmitButton className="button" type="submit">Cadastrar serviço</SubmitButton>
         </form>
 
         <section className="records-panel" aria-label="Serviços cadastrados">
@@ -90,11 +91,11 @@ export default async function ServicesPage({ searchParams }: {
                       <div className="field"><label htmlFor={`duration-${service.id}`}>Duração em minutos</label><input id={`duration-${service.id}`} name="durationMinutes" type="number" min={5} max={720} step={5} defaultValue={service.duration_minutes} required /></div>
                       <div className="field"><label htmlFor={`price-${service.id}`}>Preço em reais</label><input id={`price-${service.id}`} name="price" type="number" min={0} max={1000000} step="0.01" defaultValue={(service.price_cents / 100).toFixed(2)} required /></div>
                     </div>
-                    <button className="button button-small" type="submit">Salvar alterações</button>
+                    <SubmitButton className="button button-small" type="submit">Salvar alterações</SubmitButton>
                   </form>
                   <div className="record-actions">
-                    <form action={setServiceActive}><input type="hidden" name="id" value={service.id} /><input type="hidden" name="active" value={String(!service.is_active)} /><button className="text-button" type="submit">{service.is_active ? "Pausar serviço" : "Ativar serviço"}</button></form>
-                    <form action={deleteService}><input type="hidden" name="id" value={service.id} /><button className="text-button danger" type="submit"><Trash2 /> Excluir</button></form>
+                    <form action={setServiceActive}><input type="hidden" name="id" value={service.id} /><input type="hidden" name="active" value={String(!service.is_active)} /><SubmitButton className="text-button" type="submit">{service.is_active ? "Pausar serviço" : "Ativar serviço"}</SubmitButton></form>
+                    <form action={deleteService}><input type="hidden" name="id" value={service.id} /><SubmitButton className="text-button danger" type="submit"><Trash2 /> Excluir</SubmitButton></form>
                   </div>
                 </details>
               ))}

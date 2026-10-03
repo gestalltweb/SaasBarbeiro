@@ -2,9 +2,10 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useFormStatus } from "react-dom";
+import { SubmitButton } from "@/components/submit-button";
+import { createDraftSaveQueue } from "@/lib/draft-save-queue";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, Check, ExternalLink, Eye, FileText, Image, ImagePlus, Laptop, LoaderCircle, Palette, Plus, RotateCcw, Save, SlidersHorizontal, Smartphone, Sparkles, Tablet, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Eye, FileText, Image as ImageIcon, ImagePlus, Laptop, Palette, Plus, RotateCcw, Save, SlidersHorizontal, Smartphone, Sparkles, Tablet, Trash2 } from "lucide-react";
 import { PublicPageView, type PublicPageBusiness, type PublicPageBusinessHour, type PublicPageProfessional, type PublicPageService } from "@/components/public-page-view";
 import { applyTemplate, orderForPublic, recommendedTemplates, templateDetails, templatePreviewAssets, templatesForSegment, type PageMode, type PageSection, type PageTemplate, type PublicPageConfig } from "@/lib/public-page";
 import type { BusinessSegment } from "@/lib/service-suggestions";
@@ -32,11 +33,6 @@ const sectionLabels: Record<PageSection, string> = {
   process: "Processo", professionals: "Profissionais", testimonials: "Depoimentos", faq: "Perguntas frequentes", gallery: "Galeria",
   booking: "Agendamento", businessHours: "Horários", location: "Localização", instagram: "Instagram", footer: "Rodapé",
 };
-
-function SubmitButton({ children, className = "button", disabled = false }: { children: React.ReactNode; className?: string; disabled?: boolean }) {
-  const { pending } = useFormStatus();
-  return <button className={className} type="submit" disabled={pending || disabled}>{pending ? <><LoaderCircle className="spin" /> Salvando...</> : children}</button>;
-}
 
 function MediaField({ label, hint, folder, businessId, value, publishedPaths, onChange, allowVideo = false }: {
   label: string; hint: string; folder: string; businessId: string; value: { url: string; path: string; type?: "image" | "video" };
@@ -98,10 +94,14 @@ export function PublicPageEditor(props: Props) {
   const [activeTab, setActiveTab] = useState<"design" | "media" | "content" | "sections">("design");
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [autoSaveStatus, setAutoSaveStatus] = useState<"saved" | "saving" | "error">("saved");
+  const [savedConfigJson, setSavedConfigJson] = useState(() => JSON.stringify(props.initialConfig));
   const [isAutoSaving, startAutoSave] = useTransition();
   const [pendingTemplate, setPendingTemplate] = useState<PageTemplate | null>(null);
   const [dismissTemplateNotice, setDismissTemplateNotice] = useState(props.dismissTemplateChangeNotice);
   const initialRender = useRef(true);
+  const saveQueue = useRef(createDraftSaveQueue());
+  const autoSaveTimer = useRef<number | undefined>(undefined);
+  const openingPreview = useRef(false);
   const recommended = recommendedTemplates(props.segment);
   const configJson = useMemo(() => JSON.stringify(config), [config]);
   const hasUnpublishedChanges = !props.publishedConfig || JSON.stringify(config) !== JSON.stringify(props.publishedConfig);
@@ -110,13 +110,25 @@ export function PublicPageEditor(props: Props) {
 
   useEffect(() => {
     if (initialRender.current) { initialRender.current = false; return; }
-    setAutoSaveStatus("saving");
-    const timer = window.setTimeout(() => startAutoSave(async () => {
-      const result = await autoSavePublicPageDraft(configJson);
-      setAutoSaveStatus(result.ok ? "saved" : "error");
+    if (openingPreview.current) return;
+    let current = true;
+    autoSaveTimer.current = window.setTimeout(() => startAutoSave(async () => {
+      setAutoSaveStatus("saving");
+      const result = await saveQueue.current(() => autoSavePublicPageDraft(configJson));
+      if (current) {
+        setAutoSaveStatus(result.ok ? "saved" : "error");
+        if (result.ok) setSavedConfigJson(configJson);
+      }
     }), 1400);
-    return () => window.clearTimeout(timer);
+    return () => { current = false; window.clearTimeout(autoSaveTimer.current); };
   }, [configJson]);
+
+  async function openDraftPreview(formData: FormData) {
+    openingPreview.current = true;
+    window.clearTimeout(autoSaveTimer.current);
+    try { await saveQueue.current(() => saveAndPreviewPublicPage(formData)); }
+    finally { openingPreview.current = false; }
+  }
 
   function changeMode(mode: PageMode) {
     if (mode === config.mode) return;
@@ -142,6 +154,10 @@ export function PublicPageEditor(props: Props) {
   const previewBooking = <div className="booking-card preview-booking"><span>Prévia do agendamento</span><strong>Serviço → profissional → data → horário</strong><p>Na página publicada, este bloco usa a disponibilidade real da agenda.</p><button type="button" disabled>Escolher horário</button></div>;
 
   return <div className="page-studio-layout">
+    <section className="studio-draft-toolbar" aria-label="Visualização do rascunho">
+      <div><strong>Veja suas alterações antes de publicar</strong><p>A prévia salva o rascunho e abre a página inteira. Sua página publicada continua igual.</p></div>
+      <form action={openDraftPreview}><input type="hidden" name="config" value={configJson} /><SubmitButton className="button" pendingLabel="Preparando prévia…"><Eye size={18} /> Visualizar rascunho</SubmitButton></form>
+    </section>
     {pendingTemplate && <div className="app-modal-backdrop" role="presentation"><section className="app-modal" role="dialog" aria-modal="true" aria-labelledby="template-change-title"><h2 id="template-change-title">Mudar o modelo desta página?</h2><p>A aparência e a organização da página vão mudar. Serviços, profissionais, horários, clientes e agendamentos continuam preservados. Conteúdos compatíveis permanecem no rascunho.</p><label className="modal-checkbox"><input type="checkbox" checked={dismissTemplateNotice} onChange={(event) => setDismissTemplateNotice(event.target.checked)} /> Não mostrar novamente</label><div className="modal-actions"><button type="button" className="button button-secondary" onClick={() => setPendingTemplate(null)}>Cancelar</button><button type="button" className="button" onClick={confirmTemplateChange}>Continuar</button></div></section></div>}
     <aside className="page-editor-panel">
       <div className="studio-mode-switch" aria-label="Modo de configuração">
@@ -153,16 +169,17 @@ export function PublicPageEditor(props: Props) {
         <span className={hasUnpublishedChanges ? "has-changes" : "published-equal"}>
           {hasUnpublishedChanges ? "Alterações ainda não publicadas" : "Rascunho igual à página publicada"}
         </span>
-        <small>{isAutoSaving || autoSaveStatus === "saving" ? "Salvando rascunho…" : autoSaveStatus === "error" ? "Falha ao salvar automaticamente" : "Rascunho salvo automaticamente"}</small>
+        <small>{isAutoSaving || autoSaveStatus === "saving" ? "Salvando rascunho…" : autoSaveStatus === "error" ? "Falha ao salvar automaticamente. Use Salvar rascunho para tentar novamente." : savedConfigJson !== configJson ? "Aguardando salvamento…" : "Rascunho salvo automaticamente"}</small>
       </div>
 
       <nav className="studio-tabs-nav" aria-label="Abas do editor">
-        <button type="button" className={activeTab === "design" ? "active" : ""} onClick={() => setActiveTab("design")}><Palette size={16} /><span>Aparência</span></button>
-        <button type="button" className={activeTab === "media" ? "active" : ""} onClick={() => setActiveTab("media")}><Image size={16} /><span>Mídia</span></button>
-        <button type="button" className={activeTab === "content" ? "active" : ""} onClick={() => setActiveTab("content")}><FileText size={16} /><span>Conteúdo</span></button>
-        <button type="button" className={activeTab === "sections" ? "active" : ""} onClick={() => setActiveTab("sections")}><SlidersHorizontal size={16} /><span>Estrutura</span></button>
+        <button type="button" className={activeTab === "design" ? "active" : ""} aria-pressed={activeTab === "design"} onClick={() => setActiveTab("design")}><Palette size={16} /><span>Aparência</span></button>
+        <button type="button" className={activeTab === "media" ? "active" : ""} aria-pressed={activeTab === "media"} onClick={() => setActiveTab("media")}><ImageIcon size={16} /><span>Mídia</span></button>
+        <button type="button" className={activeTab === "content" ? "active" : ""} aria-pressed={activeTab === "content"} onClick={() => setActiveTab("content")}><FileText size={16} /><span>Conteúdo</span></button>
+        <button type="button" className={activeTab === "sections" ? "active" : ""} aria-pressed={activeTab === "sections"} onClick={() => setActiveTab("sections")}><SlidersHorizontal size={16} /><span>Estrutura</span></button>
       </nav>
 
+      <div className="studio-tab-content" key={activeTab}>
       {/* ABA 1: APARÊNCIA E DESIGN */}
       {activeTab === "design" && (
         config.mode === "template" ? (
@@ -208,9 +225,10 @@ export function PublicPageEditor(props: Props) {
       )}
 
       {/* AÇÕES GLOBAIS DE SALVAMENTO E PUBLICAÇÃO */}
+      </div>
       <div className="studio-actions">
-        <form action={savePublicPageDraft}><input type="hidden" name="config" value={configJson} /><SubmitButton><Save /> Salvar rascunho</SubmitButton></form>
-        <form action={saveAndPreviewPublicPage}><input type="hidden" name="config" value={configJson} /><SubmitButton className="button button-secondary">Visualizar página completa</SubmitButton></form>
+        <form action={savePublicPageDraft}><input type="hidden" name="config" value={configJson} /><SubmitButton className="button" pendingLabel="Salvando…"><Save /> Salvar rascunho</SubmitButton></form>
+        <form action={openDraftPreview}><input type="hidden" name="config" value={configJson} /><SubmitButton className="button button-secondary" pendingLabel="Preparando prévia…"><Eye size={16} /> Visualizar rascunho</SubmitButton></form>
         <form action={publishPageChanges} onSubmit={(event) => { if (!window.confirm(props.isPublished ? "Esta ação substituirá a configuração publicada atualmente. Deseja publicar o rascunho?" : "Deseja publicar esta página para seus clientes?")) event.preventDefault(); }}><input type="hidden" name="config" value={configJson} /><SubmitButton className="button publish-button" disabled={!props.ready}>Publicar alterações</SubmitButton></form>
         {!props.ready && <p>Para publicar, cadastre ao menos um serviço, um profissional e os horários necessários.</p>}
         <button className="text-button" type="button" onClick={() => { if (window.confirm("Descartar as alterações feitas desde o último salvamento?")) setConfig(props.initialConfig); }}>Descartar alterações</button>

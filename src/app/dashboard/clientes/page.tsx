@@ -1,3 +1,5 @@
+import { SubmitButton } from "@/components/submit-button";
+import { FilterForm } from "@/components/filter-form";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Search, Users } from "lucide-react";
@@ -16,7 +18,7 @@ export default async function ClientsPage({ searchParams }: { searchParams: Prom
 
   return <div className="dashboard-body operational-page">
     <header className="page-title"><div><h1>Clientes</h1><p>A lista é criada automaticamente a partir dos agendamentos recebidos.</p></div></header>
-    <form className="search-bar" method="get"><Search /><input name="busca" defaultValue={search} placeholder="Buscar por nome ou telefone" aria-label="Buscar clientes" /><button className="button button-small" type="submit">Buscar</button></form>
+    <FilterForm className="search-bar" method="get"><Search /><input name="busca" defaultValue={search} placeholder="Buscar por nome ou telefone" aria-label="Buscar clientes" /><SubmitButton className="button button-small" type="submit">Buscar</SubmitButton></FilterForm>
     <section className="client-directory"><div className="section-heading"><div><h2>{clients?.length || 0} {clients?.length === 1 ? "cliente" : "clientes"}</h2><p>{search ? `Resultados para “${search}”` : "Histórico consolidado do seu negócio"}</p></div><Users /></div>
       {!clients?.length ? <div className="empty-state"><Users /><h3>{search ? "Nenhum cliente encontrado" : "Seus clientes aparecerão aqui"}</h3><p>{search ? "Tente buscar por outro nome ou telefone." : "A primeira reserva pública criará o cadastro automaticamente."}</p></div> : <div className="client-list">{clients.map((client) => {
         const appointments = (client.appointments || []).sort((a: { starts_at: string }, b: { starts_at: string }) => b.starts_at.localeCompare(a.starts_at));
