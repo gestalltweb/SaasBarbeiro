@@ -11,11 +11,31 @@ export function Reveal({ children, className = "" }: { children: ReactNode; clas
       element?.classList.add("is-visible");
       return;
     }
+    // Landing elements enter independently so lower content does not animate offscreen.
+    if (element.closest(".marketing-v2")) {
+      const targets = element.querySelectorAll(".v2-section-heading h2, .v2-section-heading > p, .plain-checks li, .problem-list article, .v2-plan-card, .v2-final-cta h2, .v2-final-cta p, .v2-final-cta .button, .inline-arrow");
+      const animations: Animation[] = [];
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          const target = entry.target;
+          const card = target.matches(".v2-plan-card");
+          const lateral = target.matches(".problem-list article") && !window.matchMedia("(max-width: 700px)").matches;
+          const start = card ? "scale(.96)" : lateral ? "translateX(48px)" : "translateY(32px)";
+          const delay = target.matches("p") ? 100 : target.matches("li") ? 80 : 0;
+          animations.push(target.animate([{ opacity: 0, transform: start }, { opacity: 1, transform: "none" }], { duration: card ? 800 : 720, delay, fill: "backwards", easing: "cubic-bezier(.22,1,.36,1)" }));
+          observer.unobserve(target);
+        });
+      }, { threshold: 0.18, rootMargin: "0px 0px -64px" });
+      targets.forEach(target => observer.observe(target));
+      return () => { observer.disconnect(); animations.forEach(animation => animation.cancel()); };
+    }
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) {
         element.animate([{ opacity: 0, transform: "translateY(14px)" }, { opacity: 1, transform: "none" }], { duration: 380, easing: "cubic-bezier(.16,1,.3,1)" });
-        element.querySelectorAll(".journey article, .booking-flow-grid article, .plan-board li").forEach((card, index) => {
-          card.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 320, delay: index * 55, fill: "backwards", easing: "ease-out" });
+        element.querySelectorAll(".journey article, .booking-flow-grid article, .plan-board li, .problem-list article, .v2-plan-card li").forEach((card, index) => {
+          const mobile = window.matchMedia("(max-width: 700px)").matches;
+          card.animate([{ opacity: 0, transform: mobile ? "translateY(18px)" : "translateX(20px)" }, { opacity: 1, transform: "none" }], { duration: 360, delay: index * 70, fill: "backwards", easing: "cubic-bezier(.16,1,.3,1)" });
         });
         observer.disconnect();
       }
