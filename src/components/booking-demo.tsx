@@ -16,11 +16,23 @@ export function BookingDemo() {
   const [playing, setPlaying] = useState(true);
   const [visible, setVisible] = useState(false);
   const [selection, setSelection] = useState(steps[0].options[0]);
+  const playingRef = useRef(playing);
+  const resumeAfterVisibility = useRef(false);
+
+  useEffect(() => { playingRef.current = playing; }, [playing]);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.3 });
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.05, rootMargin: "0px 0px 12% 0px" });
     if (ref.current) observer.observe(ref.current);
-    const hide = () => { if (document.hidden) setPlaying(false); };
+    const hide = () => {
+      if (document.hidden) {
+        resumeAfterVisibility.current = playingRef.current;
+        setPlaying(false);
+      } else if (resumeAfterVisibility.current) {
+        resumeAfterVisibility.current = false;
+        setPlaying(true);
+      }
+    };
     document.addEventListener("visibilitychange", hide);
     return () => { observer.disconnect(); document.removeEventListener("visibilitychange", hide); };
   }, []);

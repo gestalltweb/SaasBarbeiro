@@ -15,13 +15,44 @@ export function StartTimeline() {
   useEffect(() => {
     const node = ref.current;
     if (!node || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
+    let inside = false;
+    let armed = true;
+    let rearmTimer: number | null = null;
+    const play = () => {
+      if (!armed || document.hidden) return;
+      armed = false;
+      node.classList.remove("timeline-active");
+      void node.offsetWidth;
       node.classList.add("timeline-active");
-      observer.disconnect();
-    }, { threshold: 0.35 });
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        inside = true;
+        if (rearmTimer !== null) window.clearTimeout(rearmTimer);
+        rearmTimer = null;
+        play();
+        return;
+      }
+      inside = false;
+      if (rearmTimer !== null) window.clearTimeout(rearmTimer);
+      rearmTimer = window.setTimeout(() => {
+        if (inside) return;
+        node.classList.remove("timeline-active");
+        armed = true;
+        rearmTimer = null;
+      }, 180);
+    }, { threshold: 0.01, rootMargin: "0px 0px 18% 0px" });
     observer.observe(node);
-    return () => observer.disconnect();
+    const handleVisibility = () => {
+      node.style.setProperty("--timeline-play-state", document.hidden ? "paused" : "running");
+      if (!document.hidden && inside) play();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      if (rearmTimer !== null) window.clearTimeout(rearmTimer);
+    };
   }, []);
   return <div ref={ref} className="start-timeline">
     <span className="timeline-track" aria-hidden="true"><i /></span>

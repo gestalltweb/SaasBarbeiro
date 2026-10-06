@@ -7,6 +7,7 @@ import { publicBusinessUrl } from "@/lib/site-url";
 import type { BusinessSegment } from "@/lib/service-suggestions";
 import { choosePageMode } from "./actions";
 import { PublicPageEditor } from "./public-page-editor";
+import { PublicLinkShare } from "@/components/public-link-share";
 
 export const metadata: Metadata = { title: "Página pública" };
 
@@ -47,5 +48,6 @@ export default async function PublicPageStudio({ searchParams }: { searchParams:
       ready={data.ready}
       publicUrl={publicBusinessUrl(data.business.slug)}
     />
+    {data.business.is_published && <PublicLinkShare url={publicBusinessUrl(data.business.slug)} />}
   </div>;
 }

@@ -25,6 +25,7 @@ describe("product preview and demo", () => {
   it("preserves navigation on normal dashboard routes", () => {
     navigation.pathname = "/dashboard/servicos";
     render(<DashboardFrame navigation={<span>Sidebar</span>} topbar={<span>Topbar</span>} mobileNavigation={<span>Mobile nav</span>}><h1>Services</h1></DashboardFrame>);
+    fireEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
     expect(screen.getByText("Sidebar")).toBeVisible();
     expect(screen.getByText("Topbar")).toBeVisible();
   });
